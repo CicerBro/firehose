@@ -1,26 +1,44 @@
 package main
 
 import (
+	"context"
 	"errors"
-	"log/slog"
-	"net/http"
+	"flag"
+	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
-	"github.com/CicerBro/speedtest/web"
+	"github.com/CicerBro/speedtest/internal/config"
+	"github.com/CicerBro/speedtest/internal/server"
 )
 
-// runServe is the M0 placeholder: embedded UI plus /healthz.
+// runServe runs the server until SIGINT/SIGTERM. Exit code 0 on clean
+// shutdown, 2 on configuration errors, 1 on runtime errors.
 func runServe(args []string) int {
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		w.Write([]byte("ok"))
-	})
-	mux.Handle("GET /", http.FileServerFS(web.FS))
-	addr := "127.0.0.1:8080"
-	slog.Info("listening", "addr", addr)
-	if err := http.ListenAndServe(addr, mux); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		slog.Error("serve", "err", err)
+	cfg, err := config.Load(args, os.Getenv)
+	if err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			config.Usage(os.Stdout)
+			return 0
+		}
+		fmt.Fprintf(os.Stderr, "speedtest serve: configuration error:\n%v\n\nrun 'speedtest serve -h' for help\n", err)
+		return 2
+	}
+	log := cfg.Logger(os.Stderr)
+
+	srv, err := server.New(cfg, server.WithLogger(log), server.WithVersion(version))
+	if err != nil {
+		log.Error("startup failed", "err", err)
 		return 1
 	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	if err := srv.Run(ctx); err != nil {
+		log.Error("server stopped", "err", err)
+		return 1
+	}
+	log.Info("shutdown complete")
 	return 0
 }
