@@ -1,0 +1,11 @@
+/speedtest
+/bin/
+/dist/
+web/node_modules/
+web/dist/*
+!web/dist/.gitkeep
+web/test-results/
+web/playwright-report/
+*.test
+*.out
+.DS_Store
