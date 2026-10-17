@@ -158,6 +158,11 @@ h2 {
   flex-direction: column;
   gap: 16px;
 }
+.browser-note {
+  margin: 8px 0 0;
+  text-align: center;
+  font-size: 0.75rem;
+}
 .banner {
   display: flex;
   align-items: center;

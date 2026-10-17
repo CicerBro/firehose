@@ -3,8 +3,8 @@
 export const MiB = 1 << 20;
 export const GiB = 1 << 30;
 
-/** Default bytes per download request (§7.3): requests restart automatically if they finish early. */
-export const DOWN_BYTES = 2 * GiB;
+/** Bound browser response buffering; requests restart automatically if they finish early (§7.3). */
+export const DOWN_BYTES = 64 * MiB;
 export const UP_START_SIZE = 16 * MiB;
 export const UP_MAX_SIZE = 256 * MiB;
 const UP_LADDER = [16, 32, 64, 128, 256].map((m) => m * MiB);

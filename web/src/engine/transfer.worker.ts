@@ -98,14 +98,17 @@ function downloadStream(base: string, sid: string, bytes: number, signal: AbortS
 
 // ---------- upload (§7.4) ----------
 
-let chunk: Uint8Array<ArrayBuffer> | null = null;
+let chunk: Blob | null = null;
 const blobs = new Map<number, Blob>();
 
-function randomChunk(): Uint8Array<ArrayBuffer> {
+function randomChunk(): Blob {
   if (!chunk) {
-    chunk = new Uint8Array(MiB);
+    const bytes = new Uint8Array(MiB);
     // getRandomValues is limited to 65 536 bytes per call.
-    for (let off = 0; off < MiB; off += 65536) crypto.getRandomValues(chunk.subarray(off, off + 65536));
+    for (let off = 0; off < MiB; off += 65536) crypto.getRandomValues(bytes.subarray(off, off + 65536));
+    // Copy the random bytes once. Larger payloads compose references to this
+    // immutable Blob instead of copying the byte array for every repetition.
+    chunk = new Blob([bytes]);
   }
   return chunk;
 }
@@ -120,7 +123,7 @@ function blobOf(size: number): Blob {
       parts.push(c);
       left -= MiB;
     }
-    if (left > 0) parts.push(c.subarray(0, left));
+    if (left > 0) parts.push(c.slice(0, left));
     // No `type`: keeps the POST a CORS simple request (no Content-Type header, no preflight).
     b = new Blob(parts);
     blobs.set(size, b);
