@@ -7,6 +7,7 @@ import { Controls } from './ui/controls';
 import { formatMsValue, rateWords } from './ui/format';
 import { Gauge } from './ui/gauge';
 import { renderIp } from './ui/ipinfo';
+import { shareImage, type ShareSeries } from './ui/shareimage';
 import { Sparkline } from './ui/sparkline';
 import { cssVar, ThemeController } from './ui/theme';
 import { Tiles } from './ui/tiles';
@@ -81,6 +82,7 @@ async function init(): Promise<void> {
   const overrides = debugOverrides(config, location.search);
 
   let lastResult: Result | null = null;
+  const shareSeries: ShareSeries = { down: [], up: [] };
   let idle: IdleLatency | null = null;
   let downBps = 0;
   let spanMs = 12_000;
@@ -158,6 +160,7 @@ async function init(): Promise<void> {
       case 'phase-result': {
         const tile = e.phase === 'download' ? tiles.down : tiles.up;
         if (e.phase === 'download') downBps = e.bps;
+        shareSeries[e.phase === 'download' ? 'down' : 'up'] = e.series.map((p) => ({ t: p.t, v: p.bps }));
         tile.result(
           e.bps,
           e.p90bps,
@@ -212,12 +215,21 @@ async function init(): Promise<void> {
     void orch.start({ connections: s.streams, durationSec, graceSec: Math.min(graceSec, durationSec), loss: s.loss });
   });
 
-  // Copy results (Text / JSON)
+  // Share menu: results image, or copy as Text / JSON
   const copyMenu = document.querySelector<HTMLDetailsElement>('details.copy')!;
   copyMenu.addEventListener('click', (ev) => {
     const btn = (ev.target as HTMLElement).closest<HTMLButtonElement>('button[data-copy]');
     if (!btn || !lastResult) return;
     const kind = btn.dataset.copy;
+    if (kind === 'image') {
+      shareImage(lastResult, shareSeries).then(
+        (how) =>
+          announce(how === 'copied' ? 'Results image copied' : how === 'shared' ? 'Results image shared' : 'Results image downloaded'),
+        () => announce('Could not create the results image'),
+      );
+      copyMenu.open = false;
+      return;
+    }
     const text = kind === 'json' ? JSON.stringify(lastResult, null, 2) : resultText(lastResult);
     copyText(text).then(
       () => announce(`Results copied as ${kind === 'json' ? 'JSON' : 'text'}`),

@@ -6,6 +6,7 @@ import { expect, test, type Request } from '@playwright/test';
 declare global {
   interface Window {
     __copied?: string;
+    __image?: string;
   }
 }
 
@@ -20,6 +21,11 @@ test('full test run, valid JSON, no preflight requests', async ({ page, context 
       value: {
         writeText: async (t: string) => {
           window.__copied = t;
+        },
+        // Share → Image: record the PNG's type and size.
+        write: async (items: ClipboardItem[]) => {
+          const b = await items[0]!.getType('image/png');
+          window.__image = `${b.type}:${b.size}`;
         },
       },
     });
@@ -89,6 +95,11 @@ test('full test run, valid JSON, no preflight requests', async ({ page, context 
   await page.locator('details.copy summary').click();
   await page.locator('button[data-copy="text"]').click();
   await expect.poll(() => page.evaluate(() => window.__copied ?? '')).toContain('Download');
+
+  // Share → Image produces a PNG
+  await page.locator('details.copy summary').click();
+  await page.locator('button[data-copy="image"]').click();
+  await expect.poll(() => page.evaluate(() => window.__image ?? '')).toMatch(/^image\/png:\d{4,}$/);
 
   // No preflight requests, ever (§5.5). Transfer requests must have gone cross-origin to 127.0.0.1.
   expect(requests.filter((q) => q.method() === 'OPTIONS').map((q) => q.url())).toEqual([]);
