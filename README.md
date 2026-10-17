@@ -49,6 +49,17 @@ separate browser limits from server or network limits.
 
 ## Deployment
 
+Container package: [`ghcr.io/cicerbro/firehose`](https://github.com/CicerBro/firehose/pkgs/container/firehose).
+The package is private and requires a GitHub login with package read access:
+
+```bash
+echo "$GHCR_TOKEN" | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin
+docker pull ghcr.io/cicerbro/firehose:1.0.0
+```
+
+Use a personal access token with `read:packages` scope for `GHCR_TOKEN`.
+The image supports Linux AMD64 and ARM64.
+
 The container listens on `0.0.0.0:8080`. Key environment variables:
 
 | Variable | Purpose |

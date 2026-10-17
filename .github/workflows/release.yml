@@ -157,5 +157,5 @@ jobs:
           prerelease=""
           case "$GITHUB_REF_NAME" in *-*) prerelease="--prerelease" ;; esac
           gh release create "$GITHUB_REF_NAME" dist/* \
-            --verify-tag --generate-notes --title "$GITHUB_REF_NAME" $prerelease \
+            --draft --verify-tag --generate-notes --title "$GITHUB_REF_NAME" $prerelease \
             --notes "Image: \`${IMAGE}:${GITHUB_REF_NAME#v}\` (linux/amd64, linux/arm64). Verify downloads with \`sha256sum -c SHA256SUMS --ignore-missing\`."
