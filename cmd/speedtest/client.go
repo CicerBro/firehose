@@ -219,6 +219,7 @@ func clientMain(ctx context.Context, args []string, getenv func(string) string, 
 	o := cfg.opts
 	o.Version = version
 	o.Warn = func(msg string) { fmt.Fprintln(stderr, "warning: "+msg) }
+	o.Loss = rtcLoss
 
 	live := tty && !cfg.quiet
 	style := client.Style{Color: tty && getenv("NO_COLOR") == ""}
