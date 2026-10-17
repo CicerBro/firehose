@@ -12,11 +12,11 @@ Sample results with **9.41 Gbps download** and **9.12 Gbps upload**.
 The screenshots use fictional server details (`speed.example.com`) and a reserved
 example IP address.
 
-![Firehose UI with sample multi-gigabit download and upload results](docs/img/ui.png)
+![Firehose UI with sample multi-gigabit download and upload results](.github/images/ui.png)
 
 The PNG exported from **Share → Image**:
 
-![Share image with sample 9.41 Gbps download and 9.12 Gbps upload results](docs/img/share.png)
+![Share image with sample 9.41 Gbps download and 9.12 Gbps upload results](.github/images/share.png)
 
 ## Features
 
@@ -31,6 +31,32 @@ The PNG exported from **Share → Image**:
 - Small: one static binary, a `FROM scratch` image, and no runtime dependencies in the frontend
 
 Not in scope for v1: multiple users, result history or share links, multi-server selection, HTTP/3.
+
+## Browser performance
+
+Browser choice can affect the result, especially on localhost or very fast LANs.
+**Chrome/Brave can give faster download results, while Firefox can upload faster.**
+We observed this pattern in macOS localhost tests using Brave (Chromium) and
+Firefox Nightly. Results vary with browser version, hardware, and test settings.
+
+At these speeds, the browser's buffering, memory copies, and delivery of data
+between processes and JavaScript can limit throughput before the network does.
+Download and upload use different paths, so a browser that wins one direction
+can lose the other. More connections also add overhead and can be slower than a
+single connection when the browser or CPU is already saturated.
+
+Firefox profiling showed large download responses accumulating in native memory,
+with a sluggish UI followed by a sudden jump in the reported speed as the buffers
+drained. Firehose now limits browser download responses to **64 MiB** and starts
+another request when each response finishes. This reduced the startup stalls in
+our tests; it does not eliminate the remaining throughput differences. Upload
+payloads reuse immutable Blobs to avoid repeated construction copies.
+
+Loaded latency includes browser scheduling and message delivery delays. A high
+localhost reading therefore does not, by itself, indicate router bufferbloat.
+For comparisons, run one test at a time, keep the tested tab in the foreground,
+and use the same settings. Compare with `firehose client` to help separate browser
+limits from server or network limits.
 
 ## Quick start (Docker Compose)
 
@@ -55,9 +81,8 @@ docker compose up -d
 
 Then open `https://speed.example.com`, sign in through Authelia, and press **Start**.
 
-DNS records, the Authelia cookie domain, firewall rules, host tuning and the
-verification checklist are in **[docs/DEPLOY.md](docs/DEPLOY.md)**. Read it before
-you deploy; it takes about 30 minutes end to end.
+Configure DNS for the UI and test hosts, use an Authelia cookie domain that
+covers all of them, and allow inbound TCP 80/443 and UDP 50000.
 
 ## CLI client
 
@@ -248,7 +273,6 @@ Traefik v3 (TLS termination)                                 │
 - **Download** is counted client-side (bytes actually received). **Upload** is counted server-side and pushed over the WebSocket every 100 ms. Browser upload progress counts bytes handed to the socket buffer, which inflates early readings, so it isn't used.
 - **Latency** uses WebSocket ping/pong on its own connection, which is authenticated once at upgrade, so pings never pay for an Authelia round trip.
 - **Final throughput** uses a steady window: the first 2 s of each direction are a warm-up and are excluded. Go and TypeScript share the same statistics code paths, checked against shared test vectors (`testdata/stats-vectors.json`).
-- The full specification is in [docs/BUILD-PLAN.md](docs/BUILD-PLAN.md), and agreed deviations are in [docs/DECISIONS.md](docs/DECISIONS.md).
 
 ## Development
 
@@ -268,10 +292,3 @@ make bench-loopback   # CLI against a local server, -n 8 and -n 1 (target ≥ 20
 warning. The frontend must be built before `go build`, because `web/dist` is embedded.
 `web/dist/.gitkeep` keeps the embed valid in a fresh checkout, so `go vet` and `go test` work
 without building the UI.
-
-## Documentation
-
-- [docs/DEPLOY.md](docs/DEPLOY.md): production deployment (DNS, certificates, Authelia, firewall, tuning, verification, troubleshooting)
-- [docs/PERFORMANCE.md](docs/PERFORMANCE.md): 10 Gbps validation report
-- [docs/BUILD-PLAN.md](docs/BUILD-PLAN.md): full specification
-- [docs/DECISIONS.md](docs/DECISIONS.md): decisions and deviations
