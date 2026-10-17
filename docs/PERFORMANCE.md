@@ -9,7 +9,7 @@ defaults: 12 s per direction, 2 s grace.
 
 | # | Test | Setup | Target | Status |
 |---|---|---|---|---|
-| 1 | Loopback, no TLS | `speedtest client --server http://127.0.0.1:8080 -n 8` on 4+ cores | ≥ 20 Gbps (the server is not the bottleneck) | Met on a dev laptop: 29.4 ↓ / 22.1 ↑ Gbps (§1) |
+| 1 | Loopback, no TLS | `firehose client --server http://127.0.0.1:8080 -n 8` on 4+ cores | ≥ 20 Gbps (the server is not the bottleneck) | Met on a dev laptop: 29.4 ↓ / 22.1 ↑ Gbps (§1) |
 | 2 | 10G LAN, no TLS | two hosts with 10G NICs, compared with `iperf3 -P 8` | CLI ≥ 90 % of iperf3 | TODO |
 | 3 | 10G LAN, via Traefik + TLS | full production stack | CLI ≥ 85 % of iperf3; record Traefik CPU | TODO |
 | 4 | Single stream | `-n 1` | Record the result | TODO |
@@ -28,10 +28,10 @@ Fill this in once per hardware setup. Results without environment details are me
 | NIC (model, driver, firmware) | TODO | TODO |
 | Link (speed, MTU, switch) | TODO | TODO |
 | OS / kernel (`uname -r`) | TODO | TODO |
-| sysctl (`deploy/sysctl/99-speedtest.conf` applied?) | TODO | TODO |
+| sysctl (`deploy/sysctl/99-firehose.conf` applied?) | TODO | TODO |
 | Congestion control / qdisc | TODO | TODO |
 | NIC offloads (TSO/GSO/GRO), ring sizes | TODO | TODO |
-| speedtest version (`speedtest version`) | TODO | TODO |
+| firehose version (`firehose version`) | TODO | TODO |
 | Traefik version | TODO | n/a |
 | Browser versions | n/a | TODO |
 
@@ -50,8 +50,8 @@ Run the test with `-d 20s` so there is a long steady state, and sample CPU in th
 middle of it:
 
 ```bash
-pidstat -u -p "$(pgrep -d, -x speedtest),$(pgrep -d, -x traefik)" 1 10
-# or: top -b -n 5 -d 2 -p "$(pgrep -x speedtest)" -p "$(pgrep -x traefik)"
+pidstat -u -p "$(pgrep -d, -x firehose),$(pgrep -d, -x traefik)" 1 10
+# or: top -b -n 5 -d 2 -p "$(pgrep -x firehose)" -p "$(pgrep -x traefik)"
 ```
 
 Report the average `%CPU`; 100 % = one core.
@@ -63,9 +63,9 @@ Checks that the Go server itself isn't the bottleneck. Run it on the server (or 
 ```bash
 make bench-loopback
 # equivalent:
-./speedtest serve --dev --listen 127.0.0.1:18080 --log-level warn &
-./speedtest client --server http://127.0.0.1:18080 -n 8 --no-loss --duration 6s
-./speedtest client --server http://127.0.0.1:18080 -n 1 --no-loss --duration 6s
+./firehose serve --dev --listen 127.0.0.1:18080 --log-level warn &
+./firehose client --server http://127.0.0.1:18080 -n 8 --no-loss --duration 6s
+./firehose client --server http://127.0.0.1:18080 -n 1 --no-loss --duration 6s
 ```
 
 Use `--json` to capture exact values. Also check that `-n 8` really opens 8 connections:
@@ -87,17 +87,17 @@ listen on the LAN address (never do this in production):
 ```bash
 # server
 iperf3 -s
-./speedtest serve --dev --listen 0.0.0.0:8080
+./firehose serve --dev --listen 0.0.0.0:8080
 # client
 iperf3 -c <server> -P 8 -t 20          # client → server (upload)
 iperf3 -c <server> -P 8 -t 20 -R       # server → client (download)
-speedtest client --server http://<server>:8080 --direct -n 8 --no-loss -d 20s --json > lan-plain.json
+firehose client --server http://<server>:8080 --direct -n 8 --no-loss -d 20s --json > lan-plain.json
 ```
 
 | Tool | Streams | Client → server (upload) | Server → client (download) | Server CPU | Notes |
 |---|---|---|---|---|---|
 | `iperf3 -P 8` | 8 | TODO | TODO (`-R`) | TODO | |
-| `speedtest client` | 8 | TODO | TODO | TODO | |
+| `firehose client` | 8 | TODO | TODO | TODO | |
 | **Ratio CLI / iperf3** | | TODO % | TODO % | | target ≥ 90 % |
 
 ## 3. 10G LAN via Traefik + TLS
@@ -106,14 +106,14 @@ The full production stack (Traefik + Authelia + host networking), with the beare
 test hosts `s1…s8` active, and **no** `--direct`:
 
 ```bash
-export SPEEDTEST_TOKEN=…
-speedtest client --server https://speed.example.com -n 8 -d 20s --json > lan-tls.json
-speedtest client --server https://speed.example.com -n 8 -d 20s --direct --json > lan-tls-direct.json
+export FIREHOSE_TOKEN=…
+firehose client --server https://speed.example.com -n 8 -d 20s --json > lan-tls.json
+firehose client --server https://speed.example.com -n 8 -d 20s --direct --json > lan-tls-direct.json
 ```
 
 Record Traefik's CPU (TLS is usually the cost here).
 
-| Mode | Streams | Download | Upload | % of iperf3 ↓ / ↑ | Traefik CPU | speedtest CPU | Idle / loaded latency |
+| Mode | Streams | Download | Upload | % of iperf3 ↓ / ↑ | Traefik CPU | firehose CPU | Idle / loaded latency |
 |---|---|---|---|---|---|---|---|
 | test hosts (`s1…s8`) | 8 | TODO | TODO | TODO | TODO | TODO | TODO |
 | `--direct` (main host) | 8 | TODO | TODO | TODO | TODO | TODO | TODO |
@@ -124,7 +124,7 @@ Target: CLI ≥ 85 % of iperf3.
 ## 4. Single stream
 
 ```bash
-speedtest client --server https://speed.example.com -n 1 -d 20s --json > single.json
+firehose client --server https://speed.example.com -n 1 -d 20s --json > single.json
 iperf3 -c <server> -P 1 -t 20 ; iperf3 -c <server> -P 1 -t 20 -R
 ```
 
@@ -165,9 +165,9 @@ plain HTTP (so HTTP/1.1), single-origin mode (at most 6 connections). Numbers va
 | Test | 1 stream | 2 streams | 6 streams |
 |---|---|---|---|
 | `iperf3` on 127.0.0.1 | 63 Gbps | 38 Gbps | 26 Gbps |
-| `speedtest client` download | 64 Gbps | – | 35 Gbps |
+| `firehose client` download | 64 Gbps | – | 35 Gbps |
 | Chromium download (bare fetch loop, no UI) | 37 Gbps | 32 Gbps | 29 Gbps |
-| `speedtest client` upload | 27 Gbps | – | 22 Gbps |
+| `firehose client` upload | 27 Gbps | – | 22 Gbps |
 | Chromium upload, Blob body (bare fetch loop) | 11–12 Gbps | 10.5 Gbps | 9.7 Gbps |
 | WebKit download / upload | 17 / 6 Gbps | – | 19 / 6.5 Gbps |
 

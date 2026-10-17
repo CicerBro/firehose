@@ -1,7 +1,7 @@
 name: Release
 
 # Push a tag like v1.0.0 to publish:
-#   - multi-arch image ghcr.io/cicerbro/speedtest (linux/amd64, linux/arm64)
+#   - multi-arch image ghcr.io/cicerbro/firehose (linux/amd64, linux/arm64)
 #   - standalone archives (server + CLI client in one binary) for
 #     linux/amd64, linux/arm64, darwin/amd64, darwin/arm64, windows/amd64
 #   - SHA256SUMS, all attached to a GitHub release
@@ -18,7 +18,7 @@ concurrency:
 
 env:
   BUN_VERSION: "1.4.3"   # keep in sync with ci.yml and the Dockerfile
-  IMAGE: ghcr.io/cicerbro/speedtest
+  IMAGE: ghcr.io/cicerbro/firehose
 
 jobs:
   web:
@@ -71,10 +71,10 @@ jobs:
           CGO_ENABLED: "0"
         run: |
           version="${GITHUB_REF_NAME#v}"
-          name="speedtest_${version}_${GOOS}_${GOARCH}"
+          name="firehose_${version}_${GOOS}_${GOARCH}"
           ext=""; [ "$GOOS" = windows ] && ext=".exe"
           mkdir -p "out/$name"
-          go build -trimpath -ldflags "-s -w -X main.version=${version}" -o "out/$name/speedtest$ext" ./cmd/speedtest
+          go build -trimpath -ldflags "-s -w -X main.version=${version}" -o "out/$name/firehose$ext" ./cmd/firehose
           cp README.md "out/$name/"
           [ -f LICENSE ] && cp LICENSE "out/$name/"
           cd out

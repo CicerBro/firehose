@@ -103,7 +103,7 @@ func (a *api) do(ctx context.Context, method, path string, in, out any) (int, er
 		return resp.StatusCode, statusError(resp)
 	}
 	if ct := resp.Header.Get("Content-Type"); !strings.HasPrefix(ct, "application/json") {
-		return resp.StatusCode, fmt.Errorf("%s%s: unexpected content type %q (is this a speedtest server?)", a.base, path, ct)
+		return resp.StatusCode, fmt.Errorf("%s%s: unexpected content type %q (is this a firehose server?)", a.base, path, ct)
 	}
 	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(out); err != nil {
 		return resp.StatusCode, fmt.Errorf("%s%s: invalid JSON: %w", a.base, path, err)

@@ -1,4 +1,4 @@
-// Package client is the speed test client library behind `speedtest client`
+// Package client is the speed test client library behind `firehose client`
 // (BUILD-PLAN §10). It follows the browser's API flow and methodology
 // (§6): GET /api/config → GET /api/ip → POST /api/session → WebSocket
 // /api/ws → latency (+ loss) → download → upload, with all statistics
@@ -18,7 +18,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/CicerBro/speedtest/internal/stats"
+	"github.com/CicerBro/firehose/internal/stats"
 )
 
 // Defaults (§6.1, §10.2).
@@ -103,7 +103,7 @@ func UserAgent(version string) string {
 	if version == "" {
 		version = "dev"
 	}
-	return "speedtest-cli/" + version
+	return "firehose-cli/" + version
 }
 
 // NormalizeServer validates a server URL and returns its origin without a
@@ -111,7 +111,7 @@ func UserAgent(version string) string {
 func NormalizeServer(s string) (string, error) {
 	s = strings.TrimSpace(s)
 	if s == "" {
-		return "", &UsageError{Msg: "no server given: use --server or set SPEEDTEST_SERVER"}
+		return "", &UsageError{Msg: "no server given: use --server or set FIREHOSE_SERVER"}
 	}
 	if !strings.Contains(s, "://") {
 		s = "https://" + s

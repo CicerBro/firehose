@@ -15,7 +15,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CicerBro/speedtest/internal/session"
+	"github.com/CicerBro/firehose/internal/session"
 )
 
 const (

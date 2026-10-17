@@ -1,4 +1,4 @@
-# Deploying the speedtest
+# Deploying the firehose
 
 This guide takes you from an empty host to a working, authenticated speed test in
 about 30 minutes. It assumes Docker Compose. A bare-metal (systemd) variant is in §9.
@@ -8,12 +8,12 @@ about 30 minutes. It assumes Docker Compose. A bare-metal (systemd) variant is i
 >
 > | Placeholder | Meaning | Where |
 > |---|---|---|
-> | `speed.example.com` | Your speedtest domain (UI host; test hosts are `s1…s8.` under it) | `traefik/dynamic/speedtest.yml`, `speedtest.env`, `authelia/configuration.snippet.yml` |
+> | `speed.example.com` | Your firehose domain (UI host; test hosts are `s1…s8.` under it) | `traefik/dynamic/firehose.yml`, `firehose.env`, `authelia/configuration.snippet.yml` |
 > | `example.com` | Parent domain, used for the Authelia cookie | `authelia/configuration.snippet.yml` |
 > | `auth.example.com` | Your Authelia portal | `authelia/configuration.snippet.yml` |
-> | `ams-1` | Server name shown in the UI | `speedtest.env` |
+> | `ams-1` | Server name shown in the UI | `firehose.env` |
 > | `admin@example.com` | ACME account e-mail | `traefik/traefik.yml` |
-> | `127.0.0.1:9091` | Authelia's address, as seen by Traefik | `traefik/dynamic/speedtest.yml` |
+> | `127.0.0.1:9091` | Authelia's address, as seen by Traefik | `traefik/dynamic/firehose.yml` |
 > | `YOUR_USER` | Your Authelia username | `authelia/configuration.snippet.yml` |
 >
 > A quick way to do the domain:
@@ -28,7 +28,7 @@ about 30 minutes. It assumes Docker Compose. A bare-metal (systemd) variant is i
 
 How it fits together: Traefik terminates TLS on :443 and asks Authelia whether each
 browser request is logged in (`forwardAuth`). It then proxies plain HTTP to the
-speedtest on `127.0.0.1:8080`. The CLI skips Authelia with a bearer token that the app
+firehose on `127.0.0.1:8080`. The CLI skips Authelia with a bearer token that the app
 checks itself. Packet-loss probes use WebRTC directly on **UDP 50000**, bypassing Traefik.
 
 ## 1. DNS records
@@ -67,7 +67,7 @@ Allow inbound:
 |---|---|---|
 | 80 | TCP | HTTP → HTTPS redirect |
 | 443 | TCP | Traefik (UI, API, test streams) |
-| **50000** | **UDP** | WebRTC packet-loss test (`SPEEDTEST_RTC_UDP_PORT`) |
+| **50000** | **UDP** | WebRTC packet-loss test (`FIREHOSE_RTC_UDP_PORT`) |
 
 Don't expose 8080. The app listens on `127.0.0.1:8080` only.
 
@@ -82,7 +82,7 @@ Check any cloud security group or router port-forward as well. If UDP 50000 is
 blocked, the test still works, but the loss tile shows "Unavailable (UDP blocked)".
 
 If the server is **behind NAT** (it has a private address and the router forwards
-443/50000), set `SPEEDTEST_RTC_PUBLIC_IPS` to the public address(es). Otherwise WebRTC
+443/50000), set `FIREHOSE_RTC_PUBLIC_IPS` to the public address(es). Otherwise WebRTC
 advertises the private IP and the loss test can't connect.
 
 ## 3. Authelia
@@ -90,10 +90,10 @@ advertises the private IP and the loss test can't connect.
 Merge [`deploy/authelia/configuration.snippet.yml`](../deploy/authelia/configuration.snippet.yml)
 into your Authelia `configuration.yml` and restart Authelia. Two things matter:
 
-1. **Cookie domain = a parent of all speedtest hostnames.** `domain: example.com` covers `speed.example.com` *and* `s1…s8.speed.example.com`. If the cookie only covers `speed.example.com`, the browser doesn't send it to the test hosts: every stream is redirected to the login page and the test fails immediately with what looks like a CORS error.
+1. **Cookie domain = a parent of all firehose hostnames.** `domain: example.com` covers `speed.example.com` *and* `s1…s8.speed.example.com`. If the cookie only covers `speed.example.com`, the browser doesn't send it to the test hosts: every stream is redirected to the login page and the test fails immediately with what looks like a CORS error.
 2. **An access-control rule for both `speed.example.com` and `*.speed.example.com`**, limited to your user (`two_factor` recommended).
 
-In `deploy/traefik/dynamic/speedtest.yml`, set the `forwardAuth.address` to where
+In `deploy/traefik/dynamic/firehose.yml`, set the `forwardAuth.address` to where
 Traefik can reach Authelia. Traefik uses host networking, so if Authelia publishes
 port 9091 on the host, `http://127.0.0.1:9091/api/authz/forward-auth` works as is.
 
@@ -118,16 +118,16 @@ Certificates are stored in `deploy/acme/acme.json`. Traefik creates the file wit
 
 ```bash
 cd deploy
-cp speedtest.env.example speedtest.env && chmod 600 speedtest.env
+cp firehose.env.example firehose.env && chmod 600 firehose.env
 ```
 
-Edit `speedtest.env`: `SPEEDTEST_PUBLIC_URL`, `SPEEDTEST_TEST_HOSTS`, `SPEEDTEST_SERVER_NAME`.
+Edit `firehose.env`: `FIREHOSE_PUBLIC_URL`, `FIREHOSE_TEST_HOSTS`, `FIREHOSE_SERVER_NAME`.
 
-**Bearer token for the CLI.** Generate it and put it in `speedtest.env`:
+**Bearer token for the CLI.** Generate it and put it in `firehose.env`:
 
 ```bash
-sed -i "s/^SPEEDTEST_API_TOKEN=.*/SPEEDTEST_API_TOKEN=$(openssl rand -hex 32)/" speedtest.env
-grep ^SPEEDTEST_API_TOKEN speedtest.env      # copy this value to your CLI machine as SPEEDTEST_TOKEN
+sed -i "s/^FIREHOSE_API_TOKEN=.*/FIREHOSE_API_TOKEN=$(openssl rand -hex 32)/" firehose.env
+grep ^FIREHOSE_API_TOKEN firehose.env      # copy this value to your CLI machine as FIREHOSE_TOKEN
 ```
 
 The token is compared in constant time and never logged. To rotate it, change the
@@ -141,7 +141,7 @@ docker compose logs -f
 ```
 
 Within about a minute, Traefik should log that it obtained the certificate. The
-speedtest logs a JSON `listening` line.
+firehose logs a JSON `listening` line.
 
 Both containers run with **host networking** (`network_mode: host`). This is
 deliberate: Docker's bridge NAT costs throughput at 10 Gbps and breaks WebRTC host
@@ -152,7 +152,7 @@ already use ports 80, 443, 8080 or UDP 50000.
 ## 6. Host tuning (recommended for ≥ 1 Gbps)
 
 ```bash
-sudo cp deploy/sysctl/99-speedtest.conf /etc/sysctl.d/
+sudo cp deploy/sysctl/99-firehose.conf /etc/sysctl.d/
 echo tcp_bbr | sudo tee /etc/modules-load.d/bbr.conf && sudo modprobe tcp_bbr
 sudo sysctl --system
 sysctl net.ipv4.tcp_congestion_control net.core.default_qdisc   # → bbr, fq
@@ -180,7 +180,7 @@ manager (e.g. a systemd-networkd `.link` file or a NetworkManager dispatcher scr
 
 ## 7. Verify (milestone M5 checklist)
 
-Run these from a **client machine**, not the server. `$TOKEN` is your `SPEEDTEST_API_TOKEN`.
+Run these from a **client machine**, not the server. `$TOKEN` is your `FIREHOSE_API_TOKEN`.
 
 **1. ALPN.** The test hosts must speak HTTP/1.1 only; the main host offers h2:
 
@@ -215,9 +215,9 @@ curl -s -o /dev/null -w '%{http_code}\n' -H 'Authorization: Bearer wrong' -H 'Re
 **4. The CLI works with the token and exits with code 3 without it:**
 
 ```bash
-SPEEDTEST_TOKEN=$TOKEN speedtest client -s https://speed.example.com; echo "exit $?"   # → results, exit 0
-speedtest client -s https://speed.example.com -q; echo "exit $?"                      # → auth error, exit 3
-docker run --rm -e SPEEDTEST_TOKEN=$TOKEN ghcr.io/cicerbro/speedtest client -s https://speed.example.com
+FIREHOSE_TOKEN=$TOKEN firehose client -s https://speed.example.com; echo "exit $?"   # → results, exit 0
+firehose client -s https://speed.example.com -q; echo "exit $?"                      # → auth error, exit 3
+docker run --rm -e FIREHOSE_TOKEN=$TOKEN ghcr.io/cicerbro/firehose client -s https://speed.example.com
 ```
 
 **5. Browser test.** Open `https://speed.example.com`, log in, and keep DevTools open (Network + Console):
@@ -243,18 +243,18 @@ ss -tn state established '( dport = :8080 )' | wc -l
 cd deploy && docker compose pull && docker compose up -d
 ```
 
-In production, pin the image to a release (`ghcr.io/cicerbro/speedtest:1.0.0`) instead
+In production, pin the image to a release (`ghcr.io/cicerbro/firehose:1.0.0`) instead
 of `latest`. Releases are listed on the GitHub releases page and come with `SHA256SUMS`.
 
 ## 9. Bare metal (systemd) instead of Docker
 
 ```bash
 # Binary from the releases page (see the README), or `make build`
-sudo install -m 755 speedtest /usr/local/bin/speedtest
-sudo install -m 600 deploy/speedtest.env.example /etc/speedtest.env     # edit it as in §5
-sudo cp deploy/systemd/speedtest.service /etc/systemd/system/
-sudo systemctl daemon-reload && sudo systemctl enable --now speedtest
-journalctl -u speedtest -f
+sudo install -m 755 firehose /usr/local/bin/firehose
+sudo install -m 600 deploy/firehose.env.example /etc/firehose.env     # edit it as in §5
+sudo cp deploy/systemd/firehose.service /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now firehose
+journalctl -u firehose -f
 ```
 
 The unit runs as a dynamic, unprivileged user with a strict sandbox and
@@ -270,18 +270,18 @@ verification steps above all still apply.
 | Download/upload fails at once; Console shows a **CORS error**; the UI says "Signed out" | The Authelia cookie isn't sent to `s1…s8`, or the login expired (Authelia's redirect has no CORS headers) | Cookie `domain` must be a parent (`example.com`). The access rule must include `*.speed.example.com`. Reload and log in again |
 | `OPTIONS` requests appear and are redirected | A transfer request became non-simple (a custom header or a `Content-Type`) | A frontend bug: preflights carry no cookies, so Authelia blocks them. Report it |
 | Results look like **Cloudflare speeds**, or the IP shown is a Cloudflare IP | The DNS records are proxied | Set every record to **DNS only** (grey cloud) |
-| Multi is no faster than Single; only one or two connections in `ss` | HTTP/2 on the test hosts, or single-origin mode | Run the ALPN check; make sure `SPEEDTEST_TEST_HOSTS` is set (empty = single origin, max 6) |
-| Packet loss always "Unavailable (UDP blocked)" | UDP 50000 is blocked, or a NAT advertises the private IP | Open UDP 50000 (host firewall **and** cloud security group). Behind NAT, set `SPEEDTEST_RTC_PUBLIC_IPS`. Keep host networking (bridge NAT breaks host candidates) |
-| CLI exits with **3** | No token, the wrong token, or the request didn't match the bearer router (it got Authelia's redirect) | Check that `SPEEDTEST_TOKEN` equals the server's `SPEEDTEST_API_TOKEN` and that the server value isn't empty. Check that the `*-token` routers exist in Traefik's dynamic config |
+| Multi is no faster than Single; only one or two connections in `ss` | HTTP/2 on the test hosts, or single-origin mode | Run the ALPN check; make sure `FIREHOSE_TEST_HOSTS` is set (empty = single origin, max 6) |
+| Packet loss always "Unavailable (UDP blocked)" | UDP 50000 is blocked, or a NAT advertises the private IP | Open UDP 50000 (host firewall **and** cloud security group). Behind NAT, set `FIREHOSE_RTC_PUBLIC_IPS`. Keep host networking (bridge NAT breaks host candidates) |
+| CLI exits with **3** | No token, the wrong token, or the request didn't match the bearer router (it got Authelia's redirect) | Check that `FIREHOSE_TOKEN` equals the server's `FIREHOSE_API_TOKEN` and that the server value isn't empty. Check that the `*-token` routers exist in Traefik's dynamic config |
 | CLI exits with **2** | DNS, firewall or TLS problem | `curl -v https://speed.example.com/healthz`; use `--ca-file` for a private CA |
-| Every request returns `401` behind Authelia | Authelia's response headers aren't forwarded | `authResponseHeaders` must include `Remote-User` (or whatever `SPEEDTEST_AUTH_HEADER` is) |
-| The IP strip shows `127.0.0.1` or Traefik's IP | The app doesn't trust the proxy hop | `SPEEDTEST_TRUSTED_PROXIES` must include the address Traefik connects from (with host networking: loopback, the default) |
+| Every request returns `401` behind Authelia | Authelia's response headers aren't forwarded | `authResponseHeaders` must include `Remote-User` (or whatever `FIREHOSE_AUTH_HEADER` is) |
+| The IP strip shows `127.0.0.1` or Traefik's IP | The app doesn't trust the proxy hop | `FIREHOSE_TRUSTED_PROXIES` must include the address Traefik connects from (with host networking: loopback, the default) |
 | Downloads stop after ~60 s, or uploads fail | Traefik timeouts, or a buffering/retry middleware | Use `deploy/traefik/traefik.yml` (`readTimeout: 90s`, `writeTimeout: 0s`). No buffering, compress or retry middleware on these routers |
 | Throughput much lower than `iperf3` | Host not tuned; Traefik CPU-bound on TLS | §6 tuning; check AES-NI and that Traefik's CPU isn't pinned at 100 %; compare with the CLI over plain HTTP (see [PERFORMANCE.md](PERFORMANCE.md)) |
 | Certificate not issued | DNS API token permissions, or a wrong provider | `docker compose logs traefik | grep -i acme`. The token needs DNS edit rights on the zone |
-| Page loads but is blank; Console shows a CSP error | `SPEEDTEST_PUBLIC_URL` or `SPEEDTEST_TEST_HOSTS` don't match the hostnames you're using | They must exactly match the scheme and host in the browser (no trailing slash) |
+| Page loads but is blank; Console shows a CSP error | `FIREHOSE_PUBLIC_URL` or `FIREHOSE_TEST_HOSTS` don't match the hostnames you're using | They must exactly match the scheme and host in the browser (no trailing slash) |
 | Results warn "Tab was in background" | The tab was hidden during the test; browsers throttle background tabs | Keep the tab in the foreground and run again |
 
-Still stuck? Run the server with `SPEEDTEST_LOG_LEVEL=debug`, and compare the browser
-result with `speedtest client` from the same machine: if the CLI is fast and the browser
+Still stuck? Run the server with `FIREHOSE_LOG_LEVEL=debug`, and compare the browser
+result with `firehose client` from the same machine: if the CLI is fast and the browser
 is slow, the limit is the browser.

@@ -170,7 +170,7 @@ export function drawShareImage(r: Result, series: ShareSeries, scale = 2): HTMLC
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = c.text;
   ctx.font = `700 30px ${FONT}`;
-  ctx.fillText('◉ Speedtest', PAD, PAD + 22);
+  ctx.fillText('◉ Firehose', PAD, PAD + 22);
   const when = new Date(r.timestamp);
   const meta = [r.server.name, Number.isNaN(when.getTime()) ? '' : when.toLocaleString(), `${r.config.connections} ${r.config.connections === 1 ? 'connection' : 'connections'}`]
     .filter(Boolean)
@@ -230,11 +230,11 @@ export async function shareImage(r: Result, series: ShareSeries): Promise<'copie
     }
   }
   const blob = await blobP;
-  const name = `speedtest-${r.timestamp.replace(/[:.]/g, '-')}.png`;
+  const name = `firehose-${r.timestamp.replace(/[:.]/g, '-')}.png`;
   const file = new File([blob], name, { type: 'image/png' });
   if (navigator.canShare?.({ files: [file] })) {
     try {
-      await navigator.share({ files: [file], title: 'Speedtest results' });
+      await navigator.share({ files: [file], title: 'Firehose results' });
       return 'shared';
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') return 'shared';

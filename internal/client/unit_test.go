@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CicerBro/speedtest/internal/stats"
+	"github.com/CicerBro/firehose/internal/stats"
 )
 
 var update = flag.Bool("update", false, "rewrite golden files")
@@ -28,7 +28,7 @@ func fixture() Result {
 		Version:   1,
 		Timestamp: "2026-10-17T12:00:00Z",
 		Server:    ServerInfo{Name: "ams-1", URL: "https://speed.example.com", Version: "0.1.0"},
-		Client:    ClientInfo{IP: "2001:db8::7", Family: "ipv6", UserAgent: "speedtest-cli/0.1.0"},
+		Client:    ClientInfo{IP: "2001:db8::7", Family: "ipv6", UserAgent: "firehose-cli/0.1.0"},
 		Config:    RunConfig{Connections: 8, DurationSec: 12, GraceSec: 2, Loss: true},
 		Latency: Latency{
 			Idle:     IdleLatency{MedianMs: 4.1, MinMs: 3.8, JitterMs: 0.3, Samples: 17},
@@ -131,7 +131,7 @@ func TestJSONSchema(t *testing.T) {
   "version": 1,
   "timestamp": "2026-10-17T12:00:00Z",
   "server": { "name": "ams-1", "url": "https://speed.example.com", "version": "0.1.0" },
-  "client": { "ip": "2001:db8::7", "family": "ipv6", "userAgent": "speedtest-cli/0.1.0" },
+  "client": { "ip": "2001:db8::7", "family": "ipv6", "userAgent": "firehose-cli/0.1.0" },
   "config": { "connections": 8, "durationSec": 12, "graceSec": 2, "loss": true },
   "latency": {
     "idle":     { "medianMs": 4.1, "minMs": 3.8, "jitterMs": 0.3, "samples": 17 },

@@ -15,14 +15,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CicerBro/speedtest/internal/config"
-	"github.com/CicerBro/speedtest/internal/server"
-	"github.com/CicerBro/speedtest/internal/session"
+	"github.com/CicerBro/firehose/internal/config"
+	"github.com/CicerBro/firehose/internal/server"
+	"github.com/CicerBro/firehose/internal/session"
 )
 
 const testToken = "test-token-0123456789abcdef"
 
-// testServer is an in-process speedtest server on loopback.
+// testServer is an in-process firehose server on loopback.
 type testServer struct {
 	URL    string
 	srv    *server.Server
@@ -250,7 +250,7 @@ func checkResult(t *testing.T, res Result, n int) {
 	if res.Server.Name != "itest" || res.Server.Version != "9.9.9" {
 		t.Errorf("server: %+v", res.Server)
 	}
-	if res.Client.UserAgent != "speedtest-cli/test" || res.Client.IP == "" {
+	if res.Client.UserAgent != "firehose-cli/test" || res.Client.IP == "" {
 		t.Errorf("client: %+v", res.Client)
 	}
 	if res.Config.Connections != n || res.Config.DurationSec != 2 || res.Config.GraceSec != 0.5 || res.Config.Loss {
@@ -402,7 +402,7 @@ func TestUnreachable(t *testing.T) {
 	}
 }
 
-func TestNotASpeedtestServer(t *testing.T) {
+func TestNotAFirehoseServer(t *testing.T) {
 	hs := httptest.NewServer(http.NotFoundHandler())
 	defer hs.Close()
 	_, err := Run(context.Background(), testOptions(hs.URL, 1))

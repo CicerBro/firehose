@@ -1,4 +1,4 @@
-# Traefik v3 static configuration for the speedtest (build plan §12.1).
+# Traefik v3 static configuration for the firehose (build plan §12.1).
 # Mounted at /etc/traefik/traefik.yml by deploy/docker-compose.yml.
 #
 # Replace before use:

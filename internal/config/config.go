@@ -18,7 +18,7 @@ import (
 )
 
 // EnvPrefix is the prefix of every environment variable.
-const EnvPrefix = "SPEEDTEST_"
+const EnvPrefix = "FIREHOSE_"
 
 // SingleOriginMaxConnections is the per-host connection cap the client applies
 // in single-origin mode (no TEST_HOSTS).
@@ -59,7 +59,7 @@ type Config struct {
 func Default() Config {
 	host, _ := os.Hostname()
 	if host == "" {
-		host = "speedtest"
+		host = "firehose"
 	}
 	return Config{
 		Listen:     "127.0.0.1:8080",
@@ -145,7 +145,7 @@ func Load(args []string, getenv func(string) string) (Config, error) {
 // Usage writes the flag list with env equivalents and defaults.
 func Usage(w io.Writer) {
 	d := Default()
-	fmt.Fprintln(w, "usage: speedtest serve [flags]\n\nflags (each has an env equivalent; flags override env):")
+	fmt.Fprintln(w, "usage: firehose serve [flags]\n\nflags (each has an env equivalent; flags override env):")
 	for _, o := range d.options() {
 		def := o.val.String()
 		if def != "" {
@@ -180,7 +180,7 @@ func (c *Config) Validate() error {
 		bad("listen address %q: %v", c.Listen, err)
 	}
 	if c.PublicURL == "" {
-		bad("public URL is required (SPEEDTEST_PUBLIC_URL / --public-url), or use --dev")
+		bad("public URL is required (FIREHOSE_PUBLIC_URL / --public-url), or use --dev")
 	} else if o, err := NormalizeOrigin(c.PublicURL); err != nil {
 		bad("public URL: %v", err)
 	} else {

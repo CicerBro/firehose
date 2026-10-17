@@ -10,6 +10,8 @@ web/dist/*
 web/test-results
 web/playwright-report
 # Local build outputs
+firehose
+firehose.exe
 speedtest
 speedtest.exe
 bin

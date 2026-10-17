@@ -12,7 +12,7 @@ import (
 	"encoding/binary"
 	"math"
 
-	"github.com/CicerBro/speedtest/internal/stats"
+	"github.com/CicerBro/firehose/internal/stats"
 )
 
 // Probe kinds (byte 0 of a probe packet).

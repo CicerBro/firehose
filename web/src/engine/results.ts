@@ -1,4 +1,4 @@
-// Builds the §7.5 results object (shared schema with `speedtest client --json`) and its text summary.
+// Builds the §7.5 results object (shared schema with `firehose client --json`) and its text summary.
 import { formatMs, formatPct, rateText, round } from '../ui/format';
 import type { ConfigResponse, IdleLatency, IpResponse, LoadedLatency, LossResult, Result, ThroughputResult, UploadResult } from './protocol';
 import { jitter, median, min, p90, type Throughput } from './stats';
@@ -84,7 +84,7 @@ export function buildResult(i: ResultInput): Result {
 export function resultText(r: Result): string {
   const fam = r.client.family === 'ipv6' ? 'IPv6' : r.client.family === 'ipv4' ? 'IPv4' : '?';
   const lines = [
-    `Speedtest ${r.timestamp}`,
+    `Firehose ${r.timestamp}`,
     `Server      ${r.server.name} (${r.server.url}) · v${r.server.version}`,
     `Client      ${r.client.ip || 'unknown'} (${fam})`,
     `Mode        ${r.config.connections} connection${r.config.connections === 1 ? '' : 's'} · ${r.config.durationSec} s per direction`,

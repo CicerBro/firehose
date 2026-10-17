@@ -9,9 +9,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/CicerBro/speedtest/internal/config"
-	"github.com/CicerBro/speedtest/internal/rtc"
-	"github.com/CicerBro/speedtest/internal/server"
+	"github.com/CicerBro/firehose/internal/config"
+	"github.com/CicerBro/firehose/internal/rtc"
+	"github.com/CicerBro/firehose/internal/server"
 )
 
 // runServe runs the server until SIGINT/SIGTERM. Exit code 0 on clean
@@ -23,7 +23,7 @@ func runServe(args []string) int {
 			config.Usage(os.Stdout)
 			return 0
 		}
-		fmt.Fprintf(os.Stderr, "speedtest serve: configuration error:\n%v\n\nrun 'speedtest serve -h' for help\n", err)
+		fmt.Fprintf(os.Stderr, "firehose serve: configuration error:\n%v\n\nrun 'firehose serve -h' for help\n", err)
 		return 2
 	}
 	log := cfg.Logger(os.Stderr)

@@ -17,9 +17,9 @@ import (
 	"github.com/pion/ice/v4"
 	"github.com/pion/webrtc/v4"
 
-	"github.com/CicerBro/speedtest/internal/config"
-	"github.com/CicerBro/speedtest/internal/server"
-	"github.com/CicerBro/speedtest/internal/session"
+	"github.com/CicerBro/firehose/internal/config"
+	"github.com/CicerBro/firehose/internal/server"
+	"github.com/CicerBro/firehose/internal/session"
 )
 
 // Server-side defaults.

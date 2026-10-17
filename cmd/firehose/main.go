@@ -1,4 +1,4 @@
-// Command speedtest is a self-hosted network speed test: server and CLI client in one binary.
+// Command firehose is a self-hosted network speed test: server and CLI client in one binary.
 package main
 
 import (
@@ -9,7 +9,7 @@ import (
 // version is set at build time with -ldflags "-X main.version=...".
 var version = "dev"
 
-const usage = `usage: speedtest <command> [flags]
+const usage = `usage: firehose <command> [flags]
 
 commands:
   serve     run the speed test server

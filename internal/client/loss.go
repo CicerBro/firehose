@@ -12,11 +12,11 @@ import (
 // the seam it plugs into, so internal/client does not depend on pion:
 //
 //   - LossFunc is the signature of a loss test implementation.
-//   - Options.Loss sets it per run (cmd/speedtest wires the rtc
+//   - Options.Loss sets it per run (cmd/firehose wires the rtc
 //     implementation there); when nil, the package-level runLoss is used.
 //   - runLoss is nil until the rtc client is wired in (either set it here,
 //     e.g. `var runLoss LossFunc = rtc.RunClientLoss` if rtc does not import
-//     this package, or pass Options.Loss from cmd/speedtest).
+//     this package, or pass Options.Loss from cmd/firehose).
 //
 // Semantics expected from Run:
 //   - With no implementation, the loss phase is skipped as if --no-loss was

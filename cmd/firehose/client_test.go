@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CicerBro/speedtest/internal/client"
-	"github.com/CicerBro/speedtest/internal/config"
-	"github.com/CicerBro/speedtest/internal/server"
+	"github.com/CicerBro/firehose/internal/client"
+	"github.com/CicerBro/firehose/internal/config"
+	"github.com/CicerBro/firehose/internal/server"
 )
 
 func env(m map[string]string) func(string) string {
@@ -21,7 +21,7 @@ func env(m map[string]string) func(string) string {
 }
 
 func TestParseClientFlagsDefaults(t *testing.T) {
-	c, err := parseClientFlags(nil, env(map[string]string{"SPEEDTEST_SERVER": "speed.example.com", "SPEEDTEST_TOKEN": "tok"}))
+	c, err := parseClientFlags(nil, env(map[string]string{"FIREHOSE_SERVER": "speed.example.com", "FIREHOSE_TOKEN": "tok"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,7 +40,7 @@ func TestParseClientFlags(t *testing.T) {
 	c, err := parseClientFlags([]string{
 		"-s", "http://127.0.0.1:8080", "--token", "flagtok", "-n", "1", "-d", "6s", "--grace", "0",
 		"--only", "latency,down", "-6", "--direct", "--json", "-q", "--interval", "1h", "--timeout", "30s", "--insecure",
-	}, env(map[string]string{"SPEEDTEST_TOKEN": "envtok"}))
+	}, env(map[string]string{"FIREHOSE_TOKEN": "envtok"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,7 +135,7 @@ func TestClientMainEndToEnd(t *testing.T) {
 		if code := clientMain(context.Background(), base, env(nil), &out, &errb, false); code != 3 {
 			t.Errorf("no token: exit %d, want 3 (%s)", code, errb.String())
 		}
-		if code := clientMain(context.Background(), base, env(map[string]string{"SPEEDTEST_TOKEN": "wrong"}), &out, &errb, false); code != 3 {
+		if code := clientMain(context.Background(), base, env(map[string]string{"FIREHOSE_TOKEN": "wrong"}), &out, &errb, false); code != 3 {
 			t.Errorf("wrong token: exit %d, want 3", code)
 		}
 		if out.Len() != 0 {
@@ -145,7 +145,7 @@ func TestClientMainEndToEnd(t *testing.T) {
 
 	t.Run("json", func(t *testing.T) {
 		var out, errb bytes.Buffer
-		code := clientMain(context.Background(), append(base, "--json"), env(map[string]string{"SPEEDTEST_TOKEN": cmdTestToken}), &out, &errb, true)
+		code := clientMain(context.Background(), append(base, "--json"), env(map[string]string{"FIREHOSE_TOKEN": cmdTestToken}), &out, &errb, true)
 		if code != 0 {
 			t.Fatalf("exit %d: %s", code, errb.String())
 		}

@@ -15,11 +15,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CicerBro/speedtest/internal/config"
-	"github.com/CicerBro/speedtest/internal/control"
-	"github.com/CicerBro/speedtest/internal/session"
-	"github.com/CicerBro/speedtest/internal/transfer"
-	"github.com/CicerBro/speedtest/web"
+	"github.com/CicerBro/firehose/internal/config"
+	"github.com/CicerBro/firehose/internal/control"
+	"github.com/CicerBro/firehose/internal/session"
+	"github.com/CicerBro/firehose/internal/transfer"
+	"github.com/CicerBro/firehose/web"
 )
 
 // ShutdownTimeout bounds graceful shutdown (§5.4).

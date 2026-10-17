@@ -1,4 +1,4 @@
-/speedtest
+/firehose
 /bin/
 /dist/
 web/node_modules/
@@ -9,6 +9,10 @@ web/playwright-report/
 *.test
 *.out
 .DS_Store
-deploy/speedtest.env
+deploy/firehose.env
 deploy/.env
 deploy/acme/
+
+# Local artifacts from the previous project name
+/speedtest
+deploy/speedtest.env

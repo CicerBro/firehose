@@ -14,7 +14,7 @@ import (
 	"github.com/pion/ice/v4"
 	"github.com/pion/webrtc/v4"
 
-	"github.com/CicerBro/speedtest/internal/stats"
+	"github.com/CicerBro/firehose/internal/stats"
 )
 
 // DefaultConnectTimeout is how long the client waits for ICE + DTLS + SCTP

@@ -1,4 +1,4 @@
-module github.com/CicerBro/speedtest
+module github.com/CicerBro/firehose
 
 go 1.25.0
 

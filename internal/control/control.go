@@ -12,7 +12,7 @@ import (
 
 	"github.com/coder/websocket"
 
-	"github.com/CicerBro/speedtest/internal/session"
+	"github.com/CicerBro/firehose/internal/session"
 )
 
 // StatsInterval is the stats push period.

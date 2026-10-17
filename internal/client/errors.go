@@ -40,13 +40,13 @@ func (e *AuthError) Error() string {
 		if loc == "" {
 			loc = "(no Location header)"
 		}
-		return fmt.Sprintf("authentication failed: %s redirected (%d) to %s; the request did not match the bearer-token router (missing or wrong --token / SPEEDTEST_TOKEN?)", e.URL, e.Status, loc)
+		return fmt.Sprintf("authentication failed: %s redirected (%d) to %s; the request did not match the bearer-token router (missing or wrong --token / FIREHOSE_TOKEN?)", e.URL, e.Status, loc)
 	}
-	return fmt.Sprintf("authentication failed: %s returned %d; check --token / SPEEDTEST_TOKEN (it must equal the server's SPEEDTEST_API_TOKEN)", e.URL, e.Status)
+	return fmt.Sprintf("authentication failed: %s returned %d; check --token / FIREHOSE_TOKEN (it must equal the server's FIREHOSE_API_TOKEN)", e.URL, e.Status)
 }
 
 // UnreachableError means the server could not be reached or the TLS
-// handshake failed, or it did not answer like a speedtest server. Exit 2.
+// handshake failed, or it did not answer like a firehose server. Exit 2.
 type UnreachableError struct{ Err error }
 
 func (e *UnreachableError) Error() string { return "server unreachable: " + e.Err.Error() }

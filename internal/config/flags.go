@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// option binds one flag name (and its SPEEDTEST_ env var) to a Config field.
+// option binds one flag name (and its FIREHOSE_ env var) to a Config field.
 type option struct {
 	name  string
 	usage string

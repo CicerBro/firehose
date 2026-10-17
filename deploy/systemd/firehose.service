@@ -1,20 +1,20 @@
 # Bare-metal alternative to Docker (build plan §12.5).
 #
-#   sudo install -m 755 speedtest /usr/local/bin/speedtest
-#   sudo install -m 600 deploy/speedtest.env.example /etc/speedtest.env   # then edit
-#   sudo cp deploy/systemd/speedtest.service /etc/systemd/system/
-#   sudo systemctl daemon-reload && sudo systemctl enable --now speedtest
+#   sudo install -m 755 firehose /usr/local/bin/firehose
+#   sudo install -m 600 deploy/firehose.env.example /etc/firehose.env   # then edit
+#   sudo cp deploy/systemd/firehose.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now firehose
 
 [Unit]
-Description=Speedtest server (self-hosted network speed test)
-Documentation=https://github.com/CicerBro/speedtest
+Description=Firehose server (self-hosted network speed test)
+Documentation=https://github.com/CicerBro/firehose
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/speedtest serve
-EnvironmentFile=/etc/speedtest.env
+ExecStart=/usr/local/bin/firehose serve
+EnvironmentFile=/etc/firehose.env
 Restart=on-failure
 RestartSec=2s
 # Graceful shutdown on SIGTERM takes up to 10 s.

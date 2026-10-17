@@ -1,8 +1,8 @@
-# Traefik v3 dynamic configuration for the speedtest (build plan §12.2).
+# Traefik v3 dynamic configuration for the firehose (build plan §12.2).
 # Requires Authelia >= 4.38 (the /api/authz/forward-auth endpoint).
 #
 # Replace before use:
-#   speed.example.com   -> your speedtest domain (also in every s1..s8 host below)
+#   speed.example.com   -> your firehose domain (also in every s1..s8 host below)
 #   127.0.0.1:9091      -> wherever your Authelia listens
 #
 # Gotchas (build plan §15):
@@ -38,18 +38,18 @@ http:
 
   routers:
     # ---- Browser path: Authelia on every hostname ----
-    speedtest-ui:
+    firehose-ui:
       rule: 'Host(`speed.example.com`)'
       entryPoints: [websecure]
       middlewares: [authelia]
-      service: speedtest
+      service: firehose
       tls:
         certResolver: le
         domains:
           - main: "speed.example.com"
             sans: ["*.speed.example.com"]
 
-    speedtest-test:
+    firehose-test:
       rule: >-
         Host(`s1.speed.example.com`) || Host(`s2.speed.example.com`) ||
         Host(`s3.speed.example.com`) || Host(`s4.speed.example.com`) ||
@@ -57,7 +57,7 @@ http:
         Host(`s7.speed.example.com`) || Host(`s8.speed.example.com`)
       entryPoints: [websecure]
       middlewares: [authelia]
-      service: speedtest
+      service: firehose
       tls:
         certResolver: le
         options: http11only
@@ -66,19 +66,19 @@ http:
             sans: ["*.speed.example.com"]
 
     # ---- CLI path: "Authorization: Bearer" skips Authelia; the app validates the token ----
-    speedtest-ui-token:
+    firehose-ui-token:
       rule: 'Host(`speed.example.com`) && HeaderRegexp(`Authorization`, `^Bearer .+`)'
       priority: 1000
       entryPoints: [websecure]
       middlewares: [strip-auth-headers]
-      service: speedtest
+      service: firehose
       tls:
         certResolver: le
         domains:
           - main: "speed.example.com"
             sans: ["*.speed.example.com"]
 
-    speedtest-test-token:
+    firehose-test-token:
       rule: >-
         (Host(`s1.speed.example.com`) || Host(`s2.speed.example.com`) ||
         Host(`s3.speed.example.com`) || Host(`s4.speed.example.com`) ||
@@ -88,7 +88,7 @@ http:
       priority: 1000
       entryPoints: [websecure]
       middlewares: [strip-auth-headers]
-      service: speedtest
+      service: firehose
       tls:
         certResolver: le
         options: http11only
@@ -97,11 +97,11 @@ http:
             sans: ["*.speed.example.com"]
 
   services:
-    speedtest:
+    firehose:
       loadBalancer:
         passHostHeader: true
         servers:
-          - url: "http://127.0.0.1:8080"   # SPEEDTEST_LISTEN
+          - url: "http://127.0.0.1:8080"   # FIREHOSE_LISTEN
         # no buffering, no compress middleware, no retry middleware
 
 tls:

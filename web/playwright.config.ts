@@ -3,9 +3,9 @@ import { defineConfig, devices } from '@playwright/test';
 // E2E (§13.5): the built binary (repo root) serves the embedded UI in --dev mode. The page runs on
 // http://localhost:8080 while transfers go to http://127.0.0.1:8080, so they are cross-origin
 // (credentialed CORS) exactly like production. Build first: `make build` (or `make e2e`).
-// Overridable for local runs when :8080 is taken: E2E_PORT=18080 SPEEDTEST_BIN=/path/to/speedtest.
+// Overridable for local runs when :8080 is taken: E2E_PORT=18080 FIREHOSE_BIN=/path/to/firehose.
 const port = process.env.E2E_PORT ?? '8080';
-const bin = process.env.SPEEDTEST_BIN ?? '../speedtest';
+const bin = process.env.FIREHOSE_BIN ?? '../firehose';
 
 export default defineConfig({
   testDir: 'tests/e2e',

@@ -1,10 +1,10 @@
-# Authelia (>= 4.38) — the parts of configuration.yml the speedtest needs (build plan §12.2).
+# Authelia (>= 4.38) — the parts of configuration.yml the firehose needs (build plan §12.2).
 # MERGE this into your existing configuration.yml; it is not a complete config.
 #
 # Replace before use:
-#   example.com         -> the parent domain of your speedtest hostnames
+#   example.com         -> the parent domain of your firehose hostnames
 #   auth.example.com    -> your Authelia portal
-#   speed.example.com   -> your speedtest domain
+#   speed.example.com   -> your firehose domain
 #   YOUR_USER           -> your Authelia username
 
 server:

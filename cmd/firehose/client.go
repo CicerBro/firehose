@@ -12,18 +12,18 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/CicerBro/speedtest/internal/client"
+	"github.com/CicerBro/firehose/internal/client"
 )
 
-const clientUsage = `usage: speedtest client [flags]
+const clientUsage = `usage: firehose client [flags]
 
-Runs a speed test against a speedtest server (latency, packet loss,
+Runs a speed test against a firehose server (latency, packet loss,
 download, upload). Exit codes: 0 ok, 1 usage, 2 unreachable/TLS,
 3 authentication, 4 a phase failed, 130 interrupted.
 
 flags:
-  -s, --server URL        server URL, the server's PUBLIC_URL (default $SPEEDTEST_SERVER)
-      --token TOKEN       bearer token, the server's SPEEDTEST_API_TOKEN (default $SPEEDTEST_TOKEN; prefer the env var)
+  -s, --server URL        server URL, the server's PUBLIC_URL (default $FIREHOSE_SERVER)
+      --token TOKEN       bearer token, the server's FIREHOSE_API_TOKEN (default $FIREHOSE_TOKEN; prefer the env var)
   -n, --connections N     streams per direction; 1 = single connection (default 8)
   -d, --duration D        duration per direction (default 12s)
       --grace D           warm-up excluded from the final result (default 2s)
@@ -65,9 +65,9 @@ func parseClientFlags(args []string, getenv func(string) string) (clientConfig, 
 	)
 	fs := flag.NewFlagSet("client", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
-	fs.StringVar(&server, "server", getenv("SPEEDTEST_SERVER"), "")
-	fs.StringVar(&server, "s", getenv("SPEEDTEST_SERVER"), "")
-	fs.StringVar(&token, "token", getenv("SPEEDTEST_TOKEN"), "")
+	fs.StringVar(&server, "server", getenv("FIREHOSE_SERVER"), "")
+	fs.StringVar(&server, "s", getenv("FIREHOSE_SERVER"), "")
+	fs.StringVar(&token, "token", getenv("FIREHOSE_TOKEN"), "")
 	fs.IntVar(&c.opts.Connections, "connections", client.DefaultConnections, "")
 	fs.IntVar(&c.opts.Connections, "n", client.DefaultConnections, "")
 	fs.DurationVar(&c.opts.Duration, "duration", client.DefaultDuration, "")
@@ -198,7 +198,7 @@ func runClient(args []string) int {
 func clientMain(ctx context.Context, args []string, getenv func(string) string, stdout, stderr io.Writer, tty bool) int {
 	cfg, err := parseClientFlags(args, getenv)
 	if err != nil {
-		fmt.Fprintf(stderr, "speedtest client: %v\n\nrun 'speedtest client -h' for help\n", err)
+		fmt.Fprintf(stderr, "firehose client: %v\n\nrun 'firehose client -h' for help\n", err)
 		return client.ExitUsage
 	}
 	if cfg.help {
@@ -263,7 +263,7 @@ func clientMain(ctx context.Context, args []string, getenv func(string) string, 
 			code = client.ExitInterrupted
 		}
 		if err != nil && code != client.ExitInterrupted {
-			fmt.Fprintf(stderr, "speedtest client: %v\n", err)
+			fmt.Fprintf(stderr, "firehose client: %v\n", err)
 		}
 		if res.Config.Connections > 0 && (code == client.ExitOK || code == client.ExitPhaseFailed || code == client.ExitInterrupted) {
 			switch cfg.format {

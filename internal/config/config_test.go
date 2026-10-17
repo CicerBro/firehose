@@ -64,16 +64,16 @@ func TestLoadDefaultsRequirePublicURL(t *testing.T) {
 
 func TestLoadEnvAndFlags(t *testing.T) {
 	env := map[string]string{
-		"SPEEDTEST_PUBLIC_URL":           "https://Speed.Example.com/",
-		"SPEEDTEST_TEST_HOSTS":           "https://s1.speed.example.com, https://s2.speed.example.com/",
-		"SPEEDTEST_MAX_CONNECTIONS":      "16",
-		"SPEEDTEST_MAX_DOWNLOAD_BYTES":   "1GiB",
-		"SPEEDTEST_MAX_REQUEST_DURATION": "20s",
-		"SPEEDTEST_TRUSTED_PROXIES":      "10.0.0.0/8,::1/128,192.168.1.1",
-		"SPEEDTEST_RTC_ENABLED":          "false",
-		"SPEEDTEST_RTC_PUBLIC_IPS":       "203.0.113.5,2001:db8::1",
-		"SPEEDTEST_LOG_LEVEL":            "debug",
-		"SPEEDTEST_API_TOKEN":            "secret",
+		"FIREHOSE_PUBLIC_URL":           "https://Speed.Example.com/",
+		"FIREHOSE_TEST_HOSTS":           "https://s1.speed.example.com, https://s2.speed.example.com/",
+		"FIREHOSE_MAX_CONNECTIONS":      "16",
+		"FIREHOSE_MAX_DOWNLOAD_BYTES":   "1GiB",
+		"FIREHOSE_MAX_REQUEST_DURATION": "20s",
+		"FIREHOSE_TRUSTED_PROXIES":      "10.0.0.0/8,::1/128,192.168.1.1",
+		"FIREHOSE_RTC_ENABLED":          "false",
+		"FIREHOSE_RTC_PUBLIC_IPS":       "203.0.113.5,2001:db8::1",
+		"FIREHOSE_LOG_LEVEL":            "debug",
+		"FIREHOSE_API_TOKEN":            "secret",
 	}
 	cfg, err := Load([]string{"--max-connections", "24", "--max-upload-bytes=64MiB", "--session-ttl", "30s"}, envMap(env))
 	if err != nil {
@@ -141,8 +141,8 @@ func TestValidationErrors(t *testing.T) {
 			t.Errorf("args %v: want error containing %q, got %v", args, want, err)
 		}
 	}
-	_, err := Load(nil, envMap(map[string]string{"SPEEDTEST_MAX_CONNECTIONS": "x", "SPEEDTEST_PUBLIC_URL": "https://a.example"}))
-	if err == nil || !strings.Contains(err.Error(), "SPEEDTEST_MAX_CONNECTIONS") {
+	_, err := Load(nil, envMap(map[string]string{"FIREHOSE_MAX_CONNECTIONS": "x", "FIREHOSE_PUBLIC_URL": "https://a.example"}))
+	if err == nil || !strings.Contains(err.Error(), "FIREHOSE_MAX_CONNECTIONS") {
 		t.Errorf("env error should name the variable: %v", err)
 	}
 }
@@ -153,7 +153,7 @@ func TestHelp(t *testing.T) {
 	}
 	var b strings.Builder
 	Usage(&b)
-	if !strings.Contains(b.String(), "SPEEDTEST_MAX_CONNECTIONS") || !strings.Contains(b.String(), "4GiB") {
+	if !strings.Contains(b.String(), "FIREHOSE_MAX_CONNECTIONS") || !strings.Contains(b.String(), "4GiB") {
 		t.Fatalf("usage missing content:\n%s", b.String())
 	}
 }

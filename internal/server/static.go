@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/CicerBro/speedtest/internal/config"
+	"github.com/CicerBro/firehose/internal/config"
 )
 
 // buildCSP builds the Content-Security-Policy from config (§5.10).

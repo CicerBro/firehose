@@ -10,7 +10,7 @@ import (
 
 	"github.com/pion/webrtc/v4"
 
-	"github.com/CicerBro/speedtest/internal/session"
+	"github.com/CicerBro/firehose/internal/session"
 )
 
 // peer is one server-side peer connection running the §8.2 protocol.

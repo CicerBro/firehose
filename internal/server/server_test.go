@@ -14,8 +14,8 @@ import (
 	"testing/fstest"
 	"time"
 
-	"github.com/CicerBro/speedtest/internal/config"
-	"github.com/CicerBro/speedtest/internal/session"
+	"github.com/CicerBro/firehose/internal/config"
+	"github.com/CicerBro/firehose/internal/session"
 )
 
 const (
@@ -400,9 +400,9 @@ func TestMetrics(t *testing.T) {
 	s.MetricsHandler().ServeHTTP(rec, httptest.NewRequest("GET", "/metrics", nil))
 	body := rec.Body.String()
 	for _, want := range []string{
-		"speedtest_sessions_active 1", "speedtest_sessions_created_total 2",
-		"speedtest_sessions_preempted_total 1", "speedtest_download_bytes_total 4096",
-		"# TYPE speedtest_upload_bytes_total counter",
+		"firehose_sessions_active 1", "firehose_sessions_created_total 2",
+		"firehose_sessions_preempted_total 1", "firehose_download_bytes_total 4096",
+		"# TYPE firehose_upload_bytes_total counter",
 	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("metrics missing %q:\n%s", want, body)

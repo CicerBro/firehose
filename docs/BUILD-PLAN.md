@@ -1,4 +1,4 @@
-# Speedtest — Build Plan
+# Firehose — Build Plan
 
 > Handoff document for the implementing agent. Read it end to end before writing code.
 > The decisions in §2 are **final**. Don't revisit them without asking the project owner.
@@ -68,7 +68,7 @@ Public or multi-user operation (user management, quotas, abuse protection beyond
 | Units | Throughput in **SI decimal bits/s** (1 Mbps = 10⁶ bit/s). Buffer and byte sizes in binary (KiB/MiB/GiB) | Industry convention. |
 | Deploy | Single binary with embedded UI. Docker image `FROM scratch`. **Host networking** in production | Simplest setup. Avoids Docker NAT overhead at 10G and UDP NAT trouble for WebRTC. |
 | Auth | **Authelia** via Traefik `forwardAuth` on **every** hostname (UI and test hosts). The app also checks the `Remote-User` header as a second line of defense | Single user, reachable over the internet. Auth is handled by the owner's existing infra. |
-| CLI auth | Static **bearer token** (`SPEEDTEST_API_TOKEN`). Separate Traefik routers match `Authorization: Bearer …`, skip Authelia, and the app validates the token | A CLI can't do Authelia's browser login and 2FA. |
+| CLI auth | Static **bearer token** (`FIREHOSE_API_TOKEN`). Separate Traefik routers match `Authorization: Bearer …`, skip Authelia, and the app validates the token | A CLI can't do Authelia's browser login and 2FA. |
 | Abuse protection | Minimal safety limits only: per-request byte/time caps, stream cap, one active test at a time (a new test cancels the old one). **No rate limiting** | Only the owner can reach the app. |
 | IP display | Only the address the browser connected with (`/api/ip` on the main host) | Owner's choice. Dual-stack detection dropped. |
 
@@ -88,7 +88,7 @@ Traefik v3 (TLS termination)                                │
    │  app validates itself                                  │
    ▼  plain HTTP/1.1 → 127.0.0.1:8080                       ▼
 ┌────────────────────────────────────────────────────────────────┐
-│ speedtest serve (single Go binary)                             │
+│ firehose serve (single Go binary)                             │
 │                                                                │
 │ UI (embedded dist/)   /api/config  /api/session  /api/ip       │
 │ /api/ws (latency + upload stats)   /api/rtc/offer              │
@@ -123,8 +123,8 @@ The number of test hosts is configurable. With N connections, use `hostsNeeded =
 ## 4. Repository layout
 
 ```
-speedtest/
-├── cmd/speedtest/main.go          # subcommands: serve | client | version
+firehose/
+├── cmd/firehose/main.go          # subcommands: serve | client | version
 ├── internal/
 │   ├── config/                    # env + flags parsing, validation, defaults
 │   ├── server/                    # http.Server, mux, middleware (CORS, security headers, logging)
@@ -169,10 +169,10 @@ speedtest/
 ├── testdata/stats-vectors.json    # shared Go/TS test vectors for stats functions
 ├── deploy/
 │   ├── traefik/traefik.yml        # static config
-│   ├── traefik/dynamic/speedtest.yml
+│   ├── traefik/dynamic/firehose.yml
 │   ├── docker-compose.yml
-│   ├── sysctl/99-speedtest.conf
-│   └── systemd/speedtest.service
+│   ├── sysctl/99-firehose.conf
+│   └── systemd/firehose.service
 ├── docs/
 │   ├── DECISIONS.md
 │   ├── DEPLOY.md
@@ -192,37 +192,37 @@ Note: `go:embed` can't reference parent directories, so `web/embed.go` (package 
 ### 5.1 Subcommands
 
 ```
-speedtest serve   [flags]      # run server
-speedtest client  [flags]      # CLI client (§10)
-speedtest version
+firehose serve   [flags]      # run server
+firehose client  [flags]      # CLI client (§10)
+firehose version
 ```
 
 ### 5.2 Configuration
 
-Flags override environment variables. Every flag has an env equivalent (`--max-connections` ↔ `SPEEDTEST_MAX_CONNECTIONS`). Sizes accept `KiB/MiB/GiB` suffixes. Durations use Go syntax.
+Flags override environment variables. Every flag has an env equivalent (`--max-connections` ↔ `FIREHOSE_MAX_CONNECTIONS`). Sizes accept `KiB/MiB/GiB` suffixes. Durations use Go syntax.
 
 | Env | Default | Meaning |
 |---|---|---|
-| `SPEEDTEST_LISTEN` | `127.0.0.1:8080` | HTTP listen address (Traefik → here) |
-| `SPEEDTEST_PUBLIC_URL` | *(required in prod)* | UI origin, e.g. `https://speed.example.com`. Used for the CORS allowlist and CSP |
-| `SPEEDTEST_TEST_HOSTS` | *(empty)* | Comma-separated origins `https://s1.speed.example.com,...`. **Empty means single-origin mode**: test streams go to `PUBLIC_URL`, and the client caps connections at 6 and shows a notice |
-| `SPEEDTEST_API_TOKEN` | *(empty)* | Bearer token for the CLI (§5.9). Empty disables bearer access |
-| `SPEEDTEST_AUTH_HEADER` | `Remote-User` | Header Authelia sets via Traefik `authResponseHeaders`. Requests without a valid bearer token must carry it |
-| `SPEEDTEST_TRUSTED_PROXIES` | `127.0.0.1/32,::1/128` | CIDRs whose `X-Forwarded-For` is trusted |
-| `SPEEDTEST_SERVER_NAME` | hostname | Shown in UI |
-| `SPEEDTEST_MAX_ACTIVE_SESSIONS` | `1` | Concurrent tests. At the limit, creating a session cancels the oldest one ("newest wins"), so a stale tab never blocks you |
-| `SPEEDTEST_MAX_CONNECTIONS` | `32` | Max streams per session per direction |
-| `SPEEDTEST_MAX_REQUEST_DURATION` | `35s` | Hard deadline per down/up request |
-| `SPEEDTEST_MAX_DOWNLOAD_BYTES` | `4GiB` | Max `bytes` per download request |
-| `SPEEDTEST_MAX_UPLOAD_BYTES` | `512MiB` | Max body per upload request |
-| `SPEEDTEST_SESSION_TTL` | `120s` | Idle expiry (no requests and no WS) |
-| `SPEEDTEST_SESSION_MAX_AGE` | `5m` | Hard expiry |
-| `SPEEDTEST_RTC_ENABLED` | `true` | Enable packet-loss test |
-| `SPEEDTEST_RTC_UDP_PORT` | `50000` | Single UDP port for all WebRTC traffic |
-| `SPEEDTEST_RTC_PUBLIC_IPS` | *(empty)* | Public IPs to advertise as ICE host candidates (needed if the server is behind NAT) |
-| `SPEEDTEST_LOG_LEVEL` | `info` | slog level |
-| `SPEEDTEST_LOG_FORMAT` | `json` | `json` or `text` |
-| `SPEEDTEST_METRICS_LISTEN` | *(empty)* | e.g. `127.0.0.1:9090` to expose `/metrics`. Empty means off |
+| `FIREHOSE_LISTEN` | `127.0.0.1:8080` | HTTP listen address (Traefik → here) |
+| `FIREHOSE_PUBLIC_URL` | *(required in prod)* | UI origin, e.g. `https://speed.example.com`. Used for the CORS allowlist and CSP |
+| `FIREHOSE_TEST_HOSTS` | *(empty)* | Comma-separated origins `https://s1.speed.example.com,...`. **Empty means single-origin mode**: test streams go to `PUBLIC_URL`, and the client caps connections at 6 and shows a notice |
+| `FIREHOSE_API_TOKEN` | *(empty)* | Bearer token for the CLI (§5.9). Empty disables bearer access |
+| `FIREHOSE_AUTH_HEADER` | `Remote-User` | Header Authelia sets via Traefik `authResponseHeaders`. Requests without a valid bearer token must carry it |
+| `FIREHOSE_TRUSTED_PROXIES` | `127.0.0.1/32,::1/128` | CIDRs whose `X-Forwarded-For` is trusted |
+| `FIREHOSE_SERVER_NAME` | hostname | Shown in UI |
+| `FIREHOSE_MAX_ACTIVE_SESSIONS` | `1` | Concurrent tests. At the limit, creating a session cancels the oldest one ("newest wins"), so a stale tab never blocks you |
+| `FIREHOSE_MAX_CONNECTIONS` | `32` | Max streams per session per direction |
+| `FIREHOSE_MAX_REQUEST_DURATION` | `35s` | Hard deadline per down/up request |
+| `FIREHOSE_MAX_DOWNLOAD_BYTES` | `4GiB` | Max `bytes` per download request |
+| `FIREHOSE_MAX_UPLOAD_BYTES` | `512MiB` | Max body per upload request |
+| `FIREHOSE_SESSION_TTL` | `120s` | Idle expiry (no requests and no WS) |
+| `FIREHOSE_SESSION_MAX_AGE` | `5m` | Hard expiry |
+| `FIREHOSE_RTC_ENABLED` | `true` | Enable packet-loss test |
+| `FIREHOSE_RTC_UDP_PORT` | `50000` | Single UDP port for all WebRTC traffic |
+| `FIREHOSE_RTC_PUBLIC_IPS` | *(empty)* | Public IPs to advertise as ICE host candidates (needed if the server is behind NAT) |
+| `FIREHOSE_LOG_LEVEL` | `info` | slog level |
+| `FIREHOSE_LOG_FORMAT` | `json` | `json` or `text` |
+| `FIREHOSE_METRICS_LISTEN` | *(empty)* | e.g. `127.0.0.1:9090` to expose `/metrics`. Empty means off |
 
 Validate at startup: URLs parse, CIDRs parse, limits > 0. Fail fast with a clear message.
 
@@ -490,7 +490,7 @@ while (!stopped) {
 - Fallback: if WS stats are unavailable, estimate upload from completed request bytes (`"approx": true` in results).
 - **Don't** use fetch streaming request bodies (`duplex: 'half'`). They need HTTP/2, and our test hosts are HTTP/1.1.
 
-### 7.5 Results object (shared by UI "copy JSON" and `speedtest client --json`)
+### 7.5 Results object (shared by UI "copy JSON" and `firehose client --json`)
 
 ```json
 {
@@ -568,7 +568,7 @@ Dual-stack detection was dropped on purpose. If it's ever wanted: add `v4.` (A r
 
 ---
 
-## 10. CLI client (`speedtest client`)
+## 10. CLI client (`firehose client`)
 
 The CLI client is a **first-class deliverable**, not just a test tool. It serves three purposes:
 1. **Verify server capacity** beyond browser limits (no 6-connections-per-host cap, no JS overhead). This is the reference measurement for the 10G validation.
@@ -577,21 +577,21 @@ The CLI client is a **first-class deliverable**, not just a test tool. It serves
 
 ### 10.1 Distribution
 
-- Ships inside the same binary as the server: `speedtest client …`.
-- CI (M7) also publishes **standalone release archives** for `linux/amd64`, `linux/arm64`, `darwin/amd64`, `darwin/arm64`, `windows/amd64`. These are the same binary; users who only want the client just run `speedtest client`. Use GoReleaser or a plain `go build` matrix plus checksums (`SHA256SUMS`).
-- The Docker image works too: `docker run --rm ghcr.io/OWNER/speedtest client --server https://speed.example.com`.
+- Ships inside the same binary as the server: `firehose client …`.
+- CI (M7) also publishes **standalone release archives** for `linux/amd64`, `linux/arm64`, `darwin/amd64`, `darwin/arm64`, `windows/amd64`. These are the same binary; users who only want the client just run `firehose client`. Use GoReleaser or a plain `go build` matrix plus checksums (`SHA256SUMS`).
+- The Docker image works too: `docker run --rm ghcr.io/OWNER/firehose client --server https://speed.example.com`.
 - The client must not depend on the embedded web UI at runtime (it's present but unused).
 
 ### 10.2 Usage and flags
 
 ```
-speedtest client --server https://speed.example.com [flags]
+firehose client --server https://speed.example.com [flags]
 ```
 
 | Flag | Default | Meaning |
 |---|---|---|
-| `--server, -s` | `$SPEEDTEST_SERVER` (required if unset) | Server base URL (the `PUBLIC_URL` of the server) |
-| `--token` | `$SPEEDTEST_TOKEN` | Bearer token (matches the server's `SPEEDTEST_API_TOKEN`). Sent as `Authorization: Bearer …` on every request, including the WebSocket upgrade and `/api/rtc/offer`. Prefer the env var so the token stays out of shell history |
+| `--server, -s` | `$FIREHOSE_SERVER` (required if unset) | Server base URL (the `PUBLIC_URL` of the server) |
+| `--token` | `$FIREHOSE_TOKEN` | Bearer token (matches the server's `FIREHOSE_API_TOKEN`). Sent as `Authorization: Bearer …` on every request, including the WebSocket upgrade and `/api/rtc/offer`. Prefer the env var so the token stays out of shell history |
 | `--connections, -n` | `8` | Streams per direction. `1` = single-connection mode |
 | `--duration, -d` | `12s` | Duration per direction |
 | `--grace` | `2s` | Warm-up excluded from the final result |
@@ -610,7 +610,7 @@ speedtest client --server https://speed.example.com [flags]
 
 ### 10.3 Behavior
 
-- Same API flow as the browser: `GET /api/config` → `POST /api/session` → WS `/api/ws` → phases (§6.1) → result. Results use the §7.5 JSON schema with `client.userAgent = "speedtest-cli/<version>"`. `client.ip` and `client.family` come from `/api/ip` (honoring `-4`/`-6`).
+- Same API flow as the browser: `GET /api/config` → `POST /api/session` → WS `/api/ws` → phases (§6.1) → result. Results use the §7.5 JSON schema with `client.userAgent = "firehose-cli/<version>"`. `client.ip` and `client.family` come from `/api/ip` (honoring `-4`/`-6`).
 - **Auth**: every request carries the bearer token. Redirects are never followed (`CheckRedirect` returns `http.ErrUseLastResponse`): a `3xx` (Authelia login redirect, meaning the request didn't match the bearer router) or a `401` (wrong token) fails fast with a clear message and exit code 3.
 - **One `http.Transport` per stream** with `ForceAttemptHTTP2: false`, `TLSNextProto: map[string]func(string, *tls.Conn) http.RoundTripper{}` (a non-nil empty map disables h2), `DisableCompression: true`, `MaxConnsPerHost: 1`, `ReadBufferSize`/`WriteBufferSize: 256 KiB`. This guarantees N real TCP connections.
 - **Download**: N goroutines, each looping `GET /api/down?bytes=…` and reading into its own pooled 1 MiB buffer, adding to a shared `atomic.Int64`. A 100 ms ticker goroutine records the timeline (§6.2).
@@ -662,7 +662,7 @@ internal/client/
   latency.go     // WS ping/pong + stats subscription
   loss.go        // pion client (M6)
   output.go      // human / json / csv renderers, progress line
-cmd/speedtest/client.go  // flag parsing → client.Run → output → exit code
+cmd/firehose/client.go  // flag parsing → client.Run → output → exit code
 ```
 `client.Run` is a library function with no direct printing (progress via a callback), so integration tests and future tools can reuse it.
 
@@ -681,7 +681,7 @@ cmd/speedtest/client.go  // flag parsing → client.Run → output → exit code
 
 ```
 ┌───────────────────────────────────────────────────────────────────┐
-│  ◉ Speedtest                                   ams-1 · v0.1   ◐   │  header: name, server, theme toggle
+│  ◉ Firehose                                   ams-1 · v0.1   ◐   │  header: name, server, theme toggle
 │                                                                   │
 │  Your IP  2001:db8::7  [IPv6]                                     │  IP strip
 │                                                                   │
@@ -814,7 +814,7 @@ log:
 # accessLog: optional; if enabled, consider filtering to status codes >= 400
 ```
 
-### 12.2 Traefik dynamic config (`deploy/traefik/dynamic/speedtest.yml`)
+### 12.2 Traefik dynamic config (`deploy/traefik/dynamic/firehose.yml`)
 
 Requires Authelia ≥ 4.38 (the `/api/authz/forward-auth` endpoint).
 
@@ -836,18 +836,18 @@ http:
 
   routers:
     # ---- Browser path: Authelia on every hostname ----
-    speedtest-ui:
+    firehose-ui:
       rule: 'Host(`speed.example.com`)'
       entryPoints: [websecure]
       middlewares: [authelia]
-      service: speedtest
+      service: firehose
       tls:
         certResolver: le
         domains:
           - main: "speed.example.com"
             sans: ["*.speed.example.com"]
 
-    speedtest-test:
+    firehose-test:
       # IMPORTANT: explicit Host() matchers, NOT HostRegexp.
       # Traefik maps TLS options to SNI using the router's Host() domains;
       # with HostRegexp the http11only option would not apply.
@@ -858,7 +858,7 @@ http:
         Host(`s7.speed.example.com`) || Host(`s8.speed.example.com`)
       entryPoints: [websecure]
       middlewares: [authelia]
-      service: speedtest
+      service: firehose
       tls:
         certResolver: le
         options: http11only
@@ -866,16 +866,16 @@ http:
     # ---- CLI path: bearer token skips Authelia; the app validates the token (§5.9) ----
     # Each mirrors the router above for the same hosts, with the SAME TLS options
     # (two routers for one host with different TLS options = conflict).
-    speedtest-ui-token:
+    firehose-ui-token:
       rule: 'Host(`speed.example.com`) && HeaderRegexp(`Authorization`, `^Bearer .+`)'
       priority: 1000
       entryPoints: [websecure]
       middlewares: [strip-auth-headers]
-      service: speedtest
+      service: firehose
       tls:
         certResolver: le
 
-    speedtest-test-token:
+    firehose-test-token:
       rule: >-
         (Host(`s1.speed.example.com`) || Host(`s2.speed.example.com`) ||
         Host(`s3.speed.example.com`) || Host(`s4.speed.example.com`) ||
@@ -885,13 +885,13 @@ http:
       priority: 1000
       entryPoints: [websecure]
       middlewares: [strip-auth-headers]
-      service: speedtest
+      service: firehose
       tls:
         certResolver: le
         options: http11only
 
   services:
-    speedtest:
+    firehose:
       loadBalancer:
         passHostHeader: true
         servers:
@@ -941,19 +941,19 @@ services:
     environment:
       CF_DNS_API_TOKEN: ${CF_DNS_API_TOKEN}
 
-  speedtest:
-    image: ghcr.io/OWNER/speedtest:latest
+  firehose:
+    image: ghcr.io/OWNER/firehose:latest
     network_mode: host
     restart: unless-stopped
     ulimits:
       nofile: { soft: 65536, hard: 65536 }
     environment:
-      SPEEDTEST_LISTEN: 127.0.0.1:8080
-      SPEEDTEST_PUBLIC_URL: https://speed.example.com
-      SPEEDTEST_TEST_HOSTS: https://s1.speed.example.com,https://s2.speed.example.com,https://s3.speed.example.com,https://s4.speed.example.com,https://s5.speed.example.com,https://s6.speed.example.com,https://s7.speed.example.com,https://s8.speed.example.com
-      SPEEDTEST_API_TOKEN: ${SPEEDTEST_API_TOKEN}   # for the CLI; generate with: openssl rand -hex 32
-      SPEEDTEST_SERVER_NAME: ams-1
-      SPEEDTEST_RTC_UDP_PORT: "50000"
+      FIREHOSE_LISTEN: 127.0.0.1:8080
+      FIREHOSE_PUBLIC_URL: https://speed.example.com
+      FIREHOSE_TEST_HOSTS: https://s1.speed.example.com,https://s2.speed.example.com,https://s3.speed.example.com,https://s4.speed.example.com,https://s5.speed.example.com,https://s6.speed.example.com,https://s7.speed.example.com,https://s8.speed.example.com
+      FIREHOSE_API_TOKEN: ${FIREHOSE_API_TOKEN}   # for the CLI; generate with: openssl rand -hex 32
+      FIREHOSE_SERVER_NAME: ams-1
+      FIREHOSE_RTC_UDP_PORT: "50000"
 ```
 
 Authelia isn't in this compose file; it's assumed to run already as part of your setup. Point the `forwardAuth` address in §12.2 at it.
@@ -977,14 +977,14 @@ RUN go mod download
 COPY . .
 COPY --from=web /src/web/dist ./web/dist
 ARG VERSION=dev
-RUN CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o /speedtest ./cmd/speedtest
+RUN CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o /firehose ./cmd/firehose
 
 FROM scratch
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/   # for `client` subcommand
-COPY --from=build /speedtest /speedtest
+COPY --from=build /firehose /firehose
 USER 65534:65534
 EXPOSE 8080 50000/udp
-ENTRYPOINT ["/speedtest"]
+ENTRYPOINT ["/firehose"]
 CMD ["serve"]
 ```
 
@@ -992,9 +992,9 @@ Build multi-arch images (`linux/amd64`, `linux/arm64`) in CI.
 
 ### 12.5 Bare-metal alternative
 
-`deploy/systemd/speedtest.service`: `ExecStart=/usr/local/bin/speedtest serve`, `EnvironmentFile=/etc/speedtest.env`, `LimitNOFILE=65536`, `DynamicUser=yes`, `NoNewPrivileges=yes`, `ProtectSystem=strict`, `Restart=on-failure`.
+`deploy/systemd/firehose.service`: `ExecStart=/usr/local/bin/firehose serve`, `EnvironmentFile=/etc/firehose.env`, `LimitNOFILE=65536`, `DynamicUser=yes`, `NoNewPrivileges=yes`, `ProtectSystem=strict`, `Restart=on-failure`.
 
-### 12.6 Host tuning (`deploy/sysctl/99-speedtest.conf`)
+### 12.6 Host tuning (`deploy/sysctl/99-firehose.conf`)
 
 ```
 net.core.default_qdisc = fq
@@ -1040,7 +1040,7 @@ Document in `DEPLOY.md`: check `ethtool -g` ring sizes, `irqbalance`, NIC offloa
 
 | Test | Setup | Target |
 |---|---|---|
-| Loopback, no TLS | `speedtest client --server http://127.0.0.1:8080 -n 8` on 4+ cores | ≥ 20 Gbps (sanity check that the server is not the bottleneck) |
+| Loopback, no TLS | `firehose client --server http://127.0.0.1:8080 -n 8` on 4+ cores | ≥ 20 Gbps (sanity check that the server is not the bottleneck) |
 | 10G LAN, no TLS | two hosts with 10G NICs; compare with `iperf3 -P 8` | CLI ≥ 90 % of iperf3 |
 | 10G LAN, via Traefik + TLS | full prod stack | CLI ≥ 85 % of iperf3; record Traefik CPU |
 | Single stream | `-n 1` | Record result; document in `PERFORMANCE.md` |
@@ -1116,8 +1116,8 @@ A private, single-user app that's reachable over the internet:
 ## 16. Milestones
 
 ### M0: Scaffold
-- Repo layout (§4), `go.mod` (module `github.com/OWNER/speedtest`), Vite TS project (strict), `web/embed.go`, Makefile, `.github/workflows/ci.yml` (go vet, staticcheck, `go test -race`, npm ci, typecheck, vitest, build, docker build), `docs/DECISIONS.md` (seeded from §2).
-- `speedtest serve` serves a placeholder `index.html` from the embedded FS plus `/healthz`.
+- Repo layout (§4), `go.mod` (module `github.com/OWNER/firehose`), Vite TS project (strict), `web/embed.go`, Makefile, `.github/workflows/ci.yml` (go vet, staticcheck, `go test -race`, npm ci, typecheck, vitest, build, docker build), `docs/DECISIONS.md` (seeded from §2).
+- `firehose serve` serves a placeholder `index.html` from the embedded FS plus `/healthz`.
 - **AC**: `make build` produces one binary; running it serves the placeholder page; CI green.
 
 ### M1: Core server
@@ -1128,7 +1128,7 @@ A private, single-user app that's reachable over the internet:
   `head -c 50000000 /dev/urandom | curl -s --data-binary @- "localhost:8080/api/up?sid=$SID"` returns `{"bytes":50000000,…}`.
 
 ### M2: Control channel + CLI client
-- `/api/ws` (§5.5), `internal/stats` with shared vectors, `internal/client`, `speedtest client` per §10 (all flags except loss; human/json/csv output; exit codes; `-4`/`-6`; `--interval`).
+- `/api/ws` (§5.5), `internal/stats` with shared vectors, `internal/client`, `firehose client` per §10 (all flags except loss; human/json/csv output; exit codes; `-4`/`-6`; `--interval`).
 - **AC**: CLI unit tests (§10.7) pass; integration test (§13.2) passes; `--json` output validates against the §7.5 schema; Ctrl-C exits 130 with no leaked goroutines; loopback benchmark ≥ 20 Gbps with `-n 8` (§13.3 row 1); `-n 1` vs `-n 8` show distinct TCP connections (verify with `ss -tn` during a test: 8 established connections to :8080).
 
 ### M3: Browser engine (minimal UI)
@@ -1154,7 +1154,7 @@ A private, single-user app that's reachable over the internet:
 - **AC**: §13.3 targets met or deviations documented with analysis; manual matrix completed and recorded; v1.0.0 tag and release image.
 
 ### Stretch (post-v1, only on request)
-- **LAN mode without TLS/Traefik**: `SPEEDTEST_EXTRA_PORTS=8081-8087` so each port is its own origin (separate browser connection pools), enabling > 6 streams without DNS.
+- **LAN mode without TLS/Traefik**: `FIREHOSE_EXTRA_PORTS=8081-8087` so each port is its own origin (separate browser connection pools), enabling > 6 streams without DNS.
 - ASN/ISP display via an optional local MaxMind GeoLite2 `.mmdb` file.
 - Result share links (SQLite, still a single binary).
 - Multi-server list with latency-based auto selection.

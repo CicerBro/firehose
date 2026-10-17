@@ -1,5 +1,5 @@
 // localStorage wrapped in try/catch: the app works without it (§11.5).
-const PREFIX = 'speedtest.';
+const PREFIX = 'firehose.';
 
 export function load(key: string): string | null {
   try {

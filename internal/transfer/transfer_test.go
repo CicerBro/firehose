@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CicerBro/speedtest/internal/session"
+	"github.com/CicerBro/firehose/internal/session"
 )
 
 func setup(t *testing.T, opts Options) (*httptest.Server, *session.Store, *session.Session) {

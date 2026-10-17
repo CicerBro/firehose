@@ -17,9 +17,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CicerBro/speedtest/internal/config"
-	"github.com/CicerBro/speedtest/internal/server"
-	"github.com/CicerBro/speedtest/internal/session"
+	"github.com/CicerBro/firehose/internal/config"
+	"github.com/CicerBro/firehose/internal/server"
+	"github.com/CicerBro/firehose/internal/session"
 )
 
 var quiet = slog.New(slog.NewTextHandler(io.Discard, nil))
@@ -336,14 +336,14 @@ func waitFor(t *testing.T, d time.Duration, cond func() bool) {
 // TestLive runs one default test (100 pps × 6 s) against a running server,
 // e.g. for the §13.4 netem checks:
 //
-//	SPEEDTEST_RTC_LIVE=http://127.0.0.1:8080 [SPEEDTEST_RTC_TOKEN=…] go test -run TestLive -v ./internal/rtc/
+//	FIREHOSE_RTC_LIVE=http://127.0.0.1:8080 [FIREHOSE_RTC_TOKEN=…] go test -run TestLive -v ./internal/rtc/
 func TestLive(t *testing.T) {
-	base := os.Getenv("SPEEDTEST_RTC_LIVE")
+	base := os.Getenv("FIREHOSE_RTC_LIVE")
 	if base == "" {
-		t.Skip("SPEEDTEST_RTC_LIVE not set")
+		t.Skip("FIREHOSE_RTC_LIVE not set")
 	}
 	hdr := http.Header{}
-	if tok := os.Getenv("SPEEDTEST_RTC_TOKEN"); tok != "" {
+	if tok := os.Getenv("FIREHOSE_RTC_TOKEN"); tok != "" {
 		hdr.Set("Authorization", "Bearer "+tok)
 	}
 	req, _ := http.NewRequest("POST", base+"/api/session", bytes.NewBufferString(`{"connections":1}`))

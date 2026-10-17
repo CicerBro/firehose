@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/url"
 
-	"github.com/CicerBro/speedtest/internal/client"
-	"github.com/CicerBro/speedtest/internal/rtc"
+	"github.com/CicerBro/firehose/internal/client"
+	"github.com/CicerBro/firehose/internal/rtc"
 )
 
 // rtcLoss plugs the pion WebRTC loss test (internal/rtc) into the CLI client's loss seam.

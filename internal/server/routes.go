@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/CicerBro/speedtest/internal/config"
+	"github.com/CicerBro/firehose/internal/config"
 )
 
 func (s *Server) routes() http.Handler {

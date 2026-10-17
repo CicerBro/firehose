@@ -13,7 +13,7 @@ import (
 
 	"github.com/coder/websocket"
 
-	"github.com/CicerBro/speedtest/internal/session"
+	"github.com/CicerBro/firehose/internal/session"
 )
 
 func setup(t *testing.T) (*httptest.Server, *session.Store, *session.Session) {

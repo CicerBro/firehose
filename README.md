@@ -1,4 +1,4 @@
-# Speedtest
+# Firehose
 
 A self-hosted, lightweight network speed test that keeps up with **10 Gbps**.
 It is one Go binary that serves the web UI and the test endpoints, and that also
@@ -12,7 +12,7 @@ Sample results with **9.41 Gbps download** and **9.12 Gbps upload**.
 The screenshots use fictional server details (`speed.example.com`) and a reserved
 example IP address.
 
-![Speedtest UI with sample multi-gigabit download and upload results](docs/img/ui.png)
+![Firehose UI with sample multi-gigabit download and upload results](docs/img/ui.png)
 
 The PNG exported from **Share → Image**:
 
@@ -26,7 +26,7 @@ The PNG exported from **Share → Image**:
 - Your **public IP** as the server sees it, with an IPv4/IPv6 badge
 - An animated semicircular **live gauge** with sparklines, light, dark and system themes, and a layout that works down to 360 px wide
 - **Share** results as an image (a PNG of the result tiles), or copy them as text or JSON. The CLI produces the same JSON schema
-- **CLI client** (`speedtest client`) with human, JSON and CSV output, a repeat interval for monitoring, and clear exit codes
+- **CLI client** (`firehose client`) with human, JSON and CSV output, a repeat interval for monitoring, and clear exit codes
 - Honest numbers: random incompressible payload, no caching, no compression, HTTP/1.1 only on the test hosts (so "8 connections" really means 8 TCP connections), and connections spread over `s1…s8` hostnames to get past the browser limit of 6 connections per host
 - Small: one static binary, a `FROM scratch` image, and no runtime dependencies in the frontend
 
@@ -41,13 +41,13 @@ You need:
 - An Authelia instance (≥ 4.38) that is already running
 
 ```bash
-git clone https://github.com/CicerBro/speedtest && cd speedtest/deploy
+git clone https://github.com/CicerBro/firehose && cd firehose/deploy
 
 # 1. Configure. Replace speed.example.com / ams-1 with your own values.
-cp speedtest.env.example speedtest.env
-sed -i "s/^SPEEDTEST_API_TOKEN=.*/SPEEDTEST_API_TOKEN=$(openssl rand -hex 32)/" speedtest.env
+cp firehose.env.example firehose.env
+sed -i "s/^FIREHOSE_API_TOKEN=.*/FIREHOSE_API_TOKEN=$(openssl rand -hex 32)/" firehose.env
 echo "CF_DNS_API_TOKEN=<cloudflare token with Zone:DNS:Edit>" > .env
-$EDITOR traefik/traefik.yml traefik/dynamic/speedtest.yml   # ACME e-mail, domain, Authelia address
+$EDITOR traefik/traefik.yml traefik/dynamic/firehose.yml   # ACME e-mail, domain, Authelia address
 
 # 2. Run
 docker compose up -d
@@ -71,50 +71,50 @@ methodology as the browser, so you can use it to:
 ### Install
 
 Download an archive for your platform from the
-[releases page](https://github.com/CicerBro/speedtest/releases)
+[releases page](https://github.com/CicerBro/firehose/releases)
 (linux/amd64, linux/arm64, darwin/amd64, darwin/arm64, windows/amd64) and verify it:
 
 ```bash
 VERSION=1.0.0; OS=linux; ARCH=amd64   # darwin / windows, arm64
-curl -LO https://github.com/CicerBro/speedtest/releases/download/v$VERSION/speedtest_${VERSION}_${OS}_${ARCH}.tar.gz
-curl -LO https://github.com/CicerBro/speedtest/releases/download/v$VERSION/SHA256SUMS
+curl -LO https://github.com/CicerBro/firehose/releases/download/v$VERSION/firehose_${VERSION}_${OS}_${ARCH}.tar.gz
+curl -LO https://github.com/CicerBro/firehose/releases/download/v$VERSION/SHA256SUMS
 sha256sum -c SHA256SUMS --ignore-missing          # macOS: shasum -a 256 -c SHA256SUMS --ignore-missing
-tar -xzf speedtest_${VERSION}_${OS}_${ARCH}.tar.gz
-sudo install -m 755 speedtest_${VERSION}_${OS}_${ARCH}/speedtest /usr/local/bin/
+tar -xzf firehose_${VERSION}_${OS}_${ARCH}.tar.gz
+sudo install -m 755 firehose_${VERSION}_${OS}_${ARCH}/firehose /usr/local/bin/
 ```
 
 Or use Docker, or build from source:
 
 ```bash
-docker run --rm -e SPEEDTEST_TOKEN ghcr.io/cicerbro/speedtest client --server https://speed.example.com
-go install github.com/CicerBro/speedtest/cmd/speedtest@latest   # CLI is fine; the embedded UI is empty (use `make build` for a server)
+docker run --rm -e FIREHOSE_TOKEN ghcr.io/cicerbro/firehose client --server https://speed.example.com
+go install github.com/CicerBro/firehose/cmd/firehose@latest   # CLI is fine; the embedded UI is empty (use `make build` for a server)
 ```
 
 ### Authentication
 
 The browser logs in through Authelia. The CLI can't do that, so it uses a static
-**bearer token** instead. The server's `SPEEDTEST_API_TOKEN` must be set (generate
+**bearer token** instead. The server's `FIREHOSE_API_TOKEN` must be set (generate
 one with `openssl rand -hex 32`). Pass the same value to the client, preferably
 through the environment so it stays out of your shell history:
 
 ```bash
-export SPEEDTEST_SERVER=https://speed.example.com
-export SPEEDTEST_TOKEN=…        # same value as the server's SPEEDTEST_API_TOKEN
-speedtest client
+export FIREHOSE_SERVER=https://speed.example.com
+export FIREHOSE_TOKEN=…        # same value as the server's FIREHOSE_API_TOKEN
+firehose client
 ```
 
 ### Examples
 
 ```bash
-speedtest client                                  # full test: latency, loss, download, upload
-speedtest client -n 1                             # single connection
-speedtest client -n 16 -d 20s                     # 16 streams, 20 s per direction
-speedtest client --only latency,down              # selected phases only
-speedtest client -6 --no-loss                     # force IPv6, skip the packet-loss test
-speedtest client --json | jq .download.bps        # machine-readable result (schema below)
-speedtest client --format csv --csv-header -q     # one CSV line with header
-speedtest client --interval 1h --format csv -q >> speed.csv   # monitoring: append one line per hour
-speedtest client --server http://127.0.0.1:8080 --direct      # loopback / LAN, no TLS
+firehose client                                  # full test: latency, loss, download, upload
+firehose client -n 1                             # single connection
+firehose client -n 16 -d 20s                     # 16 streams, 20 s per direction
+firehose client --only latency,down              # selected phases only
+firehose client -6 --no-loss                     # force IPv6, skip the packet-loss test
+firehose client --json | jq .download.bps        # machine-readable result (schema below)
+firehose client --format csv --csv-header -q     # one CSV line with header
+firehose client --interval 1h --format csv -q >> speed.csv   # monitoring: append one line per hour
+firehose client --server http://127.0.0.1:8080 --direct      # loopback / LAN, no TLS
 ```
 
 Example output:
@@ -134,8 +134,8 @@ Packet loss ↓ 0.00 %  ↑ 0.17 %   (UDP jitter ↓ 0.4 ms ↑ 0.5 ms)
 
 | Flag | Default | Meaning |
 |---|---|---|
-| `--server`, `-s` | `$SPEEDTEST_SERVER` (required if unset) | Server base URL (the server's `PUBLIC_URL`) |
-| `--token` | `$SPEEDTEST_TOKEN` | Bearer token (the server's `SPEEDTEST_API_TOKEN`). Sent on every request, including the WebSocket upgrade. Prefer the env var |
+| `--server`, `-s` | `$FIREHOSE_SERVER` (required if unset) | Server base URL (the server's `PUBLIC_URL`) |
+| `--token` | `$FIREHOSE_TOKEN` | Bearer token (the server's `FIREHOSE_API_TOKEN`). Sent on every request, including the WebSocket upgrade. Prefer the env var |
 | `--connections`, `-n` | `8` | Streams per direction. `1` = single-connection mode |
 | `--duration`, `-d` | `12s` | Duration per direction |
 | `--grace` | `2s` | Warm-up excluded from the final result |
@@ -170,7 +170,7 @@ go to stderr, so `--json` output stays clean.
 
 ### Result JSON
 
-The browser's "Copy JSON" and `speedtest client --json` produce the same object.
+The browser's "Copy JSON" and `firehose client --json` produce the same object.
 Throughput is in bits per second (SI: 1 Gbps = 10⁹ bit/s):
 
 ```json
@@ -178,7 +178,7 @@ Throughput is in bits per second (SI: 1 Gbps = 10⁹ bit/s):
   "version": 1,
   "timestamp": "2026-10-17T12:00:00Z",
   "server": { "name": "ams-1", "url": "https://speed.example.com", "version": "0.1.0" },
-  "client": { "ip": "2001:db8::7", "family": "ipv6", "userAgent": "speedtest-cli/0.1.0" },
+  "client": { "ip": "2001:db8::7", "family": "ipv6", "userAgent": "firehose-cli/0.1.0" },
   "config": { "connections": 8, "durationSec": 12, "graceSec": 2, "loss": true },
   "latency": {
     "idle":     { "medianMs": 4.1, "minMs": 3.8, "jitterMs": 0.3, "samples": 17 },
@@ -194,34 +194,34 @@ Throughput is in bits per second (SI: 1 Gbps = 10⁹ bit/s):
 
 ## Server configuration
 
-`speedtest serve` reads `SPEEDTEST_*` environment variables. Every variable has an
-equivalent flag in kebab case (`SPEEDTEST_MAX_CONNECTIONS` ↔ `--max-connections`),
+`firehose serve` reads `FIREHOSE_*` environment variables. Every variable has an
+equivalent flag in kebab case (`FIREHOSE_MAX_CONNECTIONS` ↔ `--max-connections`),
 and flags take precedence. Sizes accept `KiB`/`MiB`/`GiB`, and durations use Go syntax
 (`35s`, `5m`). The server checks the configuration at startup and exits with a clear
-message if something is invalid. See [`deploy/speedtest.env.example`](deploy/speedtest.env.example).
+message if something is invalid. See [`deploy/firehose.env.example`](deploy/firehose.env.example).
 
 | Env | Flag | Default | Meaning |
 |---|---|---|---|
-| `SPEEDTEST_LISTEN` | `--listen` | `127.0.0.1:8080` | HTTP listen address (Traefik proxies here) |
-| `SPEEDTEST_PUBLIC_URL` | `--public-url` | *(required in prod)* | UI origin, e.g. `https://speed.example.com`. Used for the CORS allowlist and CSP |
-| `SPEEDTEST_TEST_HOSTS` | `--test-hosts` | *(empty)* | Comma-separated test origins `https://s1.speed.example.com,…`. Empty = single-origin mode (streams go to `PUBLIC_URL`, browser capped at 6 connections) |
-| `SPEEDTEST_API_TOKEN` | `--api-token` | *(empty)* | Bearer token for the CLI. Empty disables bearer access |
-| `SPEEDTEST_AUTH_HEADER` | `--auth-header` | `Remote-User` | Header that Authelia sets. Requests without a valid bearer token must carry it |
-| `SPEEDTEST_TRUSTED_PROXIES` | `--trusted-proxies` | `127.0.0.1/32,::1/128` | CIDRs whose `X-Forwarded-For` is trusted |
-| `SPEEDTEST_SERVER_NAME` | `--server-name` | hostname | Shown in the UI |
-| `SPEEDTEST_MAX_ACTIVE_SESSIONS` | `--max-active-sessions` | `1` | Concurrent tests. A new test cancels the oldest one ("newest wins") |
-| `SPEEDTEST_MAX_CONNECTIONS` | `--max-connections` | `32` | Max streams per session per direction |
-| `SPEEDTEST_MAX_REQUEST_DURATION` | `--max-request-duration` | `35s` | Hard deadline per download/upload request |
-| `SPEEDTEST_MAX_DOWNLOAD_BYTES` | `--max-download-bytes` | `4GiB` | Max bytes per download request |
-| `SPEEDTEST_MAX_UPLOAD_BYTES` | `--max-upload-bytes` | `512MiB` | Max body per upload request |
-| `SPEEDTEST_SESSION_TTL` | `--session-ttl` | `120s` | Idle expiry |
-| `SPEEDTEST_SESSION_MAX_AGE` | `--session-max-age` | `5m` | Hard expiry |
-| `SPEEDTEST_RTC_ENABLED` | `--rtc-enabled` | `true` | Enable the packet-loss test |
-| `SPEEDTEST_RTC_UDP_PORT` | `--rtc-udp-port` | `50000` | Single UDP port for all WebRTC traffic |
-| `SPEEDTEST_RTC_PUBLIC_IPS` | `--rtc-public-ips` | *(empty)* | Public IPs to advertise as ICE candidates (only behind NAT) |
-| `SPEEDTEST_LOG_LEVEL` | `--log-level` | `info` | `debug`, `info`, `warn`, `error` |
-| `SPEEDTEST_LOG_FORMAT` | `--log-format` | `json` | `json` or `text` |
-| `SPEEDTEST_METRICS_LISTEN` | `--metrics-listen` | *(empty)* | e.g. `127.0.0.1:9090` to expose Prometheus `/metrics`. Empty = off |
+| `FIREHOSE_LISTEN` | `--listen` | `127.0.0.1:8080` | HTTP listen address (Traefik proxies here) |
+| `FIREHOSE_PUBLIC_URL` | `--public-url` | *(required in prod)* | UI origin, e.g. `https://speed.example.com`. Used for the CORS allowlist and CSP |
+| `FIREHOSE_TEST_HOSTS` | `--test-hosts` | *(empty)* | Comma-separated test origins `https://s1.speed.example.com,…`. Empty = single-origin mode (streams go to `PUBLIC_URL`, browser capped at 6 connections) |
+| `FIREHOSE_API_TOKEN` | `--api-token` | *(empty)* | Bearer token for the CLI. Empty disables bearer access |
+| `FIREHOSE_AUTH_HEADER` | `--auth-header` | `Remote-User` | Header that Authelia sets. Requests without a valid bearer token must carry it |
+| `FIREHOSE_TRUSTED_PROXIES` | `--trusted-proxies` | `127.0.0.1/32,::1/128` | CIDRs whose `X-Forwarded-For` is trusted |
+| `FIREHOSE_SERVER_NAME` | `--server-name` | hostname | Shown in the UI |
+| `FIREHOSE_MAX_ACTIVE_SESSIONS` | `--max-active-sessions` | `1` | Concurrent tests. A new test cancels the oldest one ("newest wins") |
+| `FIREHOSE_MAX_CONNECTIONS` | `--max-connections` | `32` | Max streams per session per direction |
+| `FIREHOSE_MAX_REQUEST_DURATION` | `--max-request-duration` | `35s` | Hard deadline per download/upload request |
+| `FIREHOSE_MAX_DOWNLOAD_BYTES` | `--max-download-bytes` | `4GiB` | Max bytes per download request |
+| `FIREHOSE_MAX_UPLOAD_BYTES` | `--max-upload-bytes` | `512MiB` | Max body per upload request |
+| `FIREHOSE_SESSION_TTL` | `--session-ttl` | `120s` | Idle expiry |
+| `FIREHOSE_SESSION_MAX_AGE` | `--session-max-age` | `5m` | Hard expiry |
+| `FIREHOSE_RTC_ENABLED` | `--rtc-enabled` | `true` | Enable the packet-loss test |
+| `FIREHOSE_RTC_UDP_PORT` | `--rtc-udp-port` | `50000` | Single UDP port for all WebRTC traffic |
+| `FIREHOSE_RTC_PUBLIC_IPS` | `--rtc-public-ips` | *(empty)* | Public IPs to advertise as ICE candidates (only behind NAT) |
+| `FIREHOSE_LOG_LEVEL` | `--log-level` | `info` | `debug`, `info`, `warn`, `error` |
+| `FIREHOSE_LOG_FORMAT` | `--log-format` | `json` | `json` or `text` |
+| `FIREHOSE_METRICS_LISTEN` | `--metrics-listen` | *(empty)* | e.g. `127.0.0.1:9090` to expose Prometheus `/metrics`. Empty = off |
 | — | `--dev` | `false` | Local development: turns off the auth check and enables debug query overrides. Logs a loud warning. **Never use in production** |
 
 ## Architecture
@@ -237,7 +237,7 @@ Traefik v3 (TLS termination)                                 │
    │  "Authorization: Bearer" router (CLI)                   │
    ▼  plain HTTP/1.1 → 127.0.0.1:8080                        ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ speedtest serve (single Go binary)                              │
+│ firehose serve (single Go binary)                              │
 │  embedded UI · /api/config · /api/session · /api/ip             │
 │  /api/ws (latency + live upload stats) · /api/rtc/offer         │
 │  /api/down · /api/up                                            │
@@ -256,7 +256,7 @@ Requirements: Go ≥ 1.25, [Bun](https://bun.sh) ≥ 1.4, `make`.
 
 ```bash
 make dev          # Go server (--dev, single-origin) on :8080 + Vite dev server on http://localhost:5173
-make build        # bun install + vite build, then go build → ./speedtest (UI embedded)
+make build        # bun install + vite build, then go build → ./firehose (UI embedded)
 make test         # go test -race ./... + bun test
 make lint         # go vet, staticcheck, tsc --noEmit
 make e2e          # Playwright (Chromium, Firefox, WebKit)
