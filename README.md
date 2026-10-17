@@ -54,11 +54,12 @@ The package is private and requires a GitHub login with package read access:
 
 ```bash
 echo "$GHCR_TOKEN" | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin
-docker pull ghcr.io/cicerbro/firehose:1.0.0
+docker pull ghcr.io/cicerbro/firehose:latest
 ```
 
 Use a personal access token with `read:packages` scope for `GHCR_TOKEN`.
 The image supports Linux AMD64 and ARM64.
+Use `:1.0.0` instead of `:latest` to pin this release.
 
 The container listens on `0.0.0.0:8080`. Key environment variables:
 
@@ -88,7 +89,7 @@ Download a binary from [Releases](https://github.com/CicerBro/firehose/releases)
 or use the container image:
 
 ```bash
-docker run --rm -e FIREHOSE_TOKEN ghcr.io/cicerbro/firehose client --server https://speed.example.com
+docker run --rm -e FIREHOSE_TOKEN ghcr.io/cicerbro/firehose:latest client --server https://speed.example.com
 ```
 
 Set `FIREHOSE_TOKEN` to the server's `FIREHOSE_API_TOKEN` for authenticated access.
