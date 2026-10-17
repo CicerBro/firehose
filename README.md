@@ -5,6 +5,10 @@ web UI and includes a CLI client for scripted tests and measuring past browser l
 
 ![Firehose UI with sample multi-gigabit download and upload results](.github/images/ui.png)
 
+Example PNG exported from **Share → Image**:
+
+![Share image with sample 9.41 Gbps download and 9.12 Gbps upload results](.github/images/share.png)
+
 - Download and upload with single or multiple connections (default 8, up to 32).
 - Idle and loaded latency, jitter, and WebRTC packet loss.
 - Share results as an image, text, or JSON.
