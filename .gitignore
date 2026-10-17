@@ -9,10 +9,6 @@ web/playwright-report/
 *.test
 *.out
 .DS_Store
-deploy/firehose.env
-deploy/.env
-deploy/acme/
 
 # Local artifacts from the previous project name
 /speedtest
-deploy/speedtest.env

@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 // Download / upload streams (§7.3, §7.4). Every request stays a CORS "simple request" (§5.5):
 // download = plain GET without custom headers, upload = POST of a Blob with an empty type.
-// The sid travels in the query string; credentials are included so the Authelia cookie reaches s1…sN.
+// The sid travels in the query string; credentials are included so authentication cookies reach s1…sN.
 import type { TransferCommand, TransferEvent } from './protocol';
 import { MiB, uploadSizes } from './plan';
 

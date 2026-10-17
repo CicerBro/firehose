@@ -19,7 +19,6 @@ dist
 *.test
 *.out
 # Not needed for the build
-deploy
 docs
 *.md
 Dockerfile

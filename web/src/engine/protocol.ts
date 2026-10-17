@@ -70,7 +70,7 @@ export type TransferEvent =
   | { type: 'progress'; bytes: number }
   /**
    * A stream failed for good. `auth` = the first request failed with a network error (TypeError) before
-   * any data arrived or got 401: an expired Authelia login looks exactly like that (§7.1).
+   * any data arrived or got 401: an expired login session looks exactly like that (§7.1).
    */
   | { type: 'error'; message: string; auth: boolean }
   /** All streams stopped after a 'stop' command; final progress was flushed before this. */

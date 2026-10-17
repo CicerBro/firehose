@@ -26,8 +26,7 @@ type UsageError struct{ Msg string }
 func (e *UsageError) Error() string { return e.Msg }
 
 // AuthError means the server rejected the credentials: a 401, or a 3xx
-// redirect (usually to the Authelia login because the request did not match
-// the bearer-token router). Exit 3.
+// redirect to an authentication provider login page. Exit 3.
 type AuthError struct {
 	Status   int
 	Location string // redirect target, if any

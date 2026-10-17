@@ -368,7 +368,7 @@ func TestAuth(t *testing.T) {
 	}
 }
 
-// TestAuthRedirect: an Authelia login redirect is an auth failure (exit 3)
+// TestAuthRedirect: an authentication login redirect is an auth failure (exit 3)
 // and is not followed.
 func TestAuthRedirect(t *testing.T) {
 	var hits atomic.Int32

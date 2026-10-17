@@ -1,7 +1,7 @@
 // HTTP API calls on the main host (§5.5): config, ip, session.
 import type { ApiErrorBody, ConfigResponse, IpResponse, SessionResponse } from './protocol';
 
-/** The Authelia login expired (redirect or 401). The UI offers a reload (§7.1). */
+/** The login session expired (redirect or 401). The UI offers a reload (§7.1). */
 export class SignedOutError extends Error {
   constructor() {
     super('Signed out. Reload to sign in again.');
@@ -45,7 +45,7 @@ export async function createSession(connections: number, signal?: AbortSignal): 
     method: 'POST',
     cache: 'no-store',
     credentials: 'same-origin',
-    // Detect an expired Authelia login instead of following its redirect (§7.1).
+    // Detect an expired login session instead of following its redirect (§7.1).
     redirect: 'manual',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ connections }),
