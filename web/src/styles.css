@@ -11,6 +11,11 @@
   --warn: #fbbf24;
   --bad: #f87171;
   --shadow: none;
+  /* dropdown panels (shadcn-style popover) */
+  --popover: var(--surface);
+  --popover-border: #263041;
+  --popover-shadow: 0 10px 32px rgb(0 0 0 / 45%), 0 2px 8px rgb(0 0 0 / 30%);
+  --row-hover: color-mix(in srgb, var(--text) 9%, transparent);
   /* status text tone: full strength on dark, darkened on light for AA contrast */
   --tone: 100%;
   --radius: 16px;
@@ -29,6 +34,9 @@
   --warn: #d97706;
   --bad: #dc2626;
   --shadow: 0 1px 2px rgb(15 23 42 / 6%), 0 4px 16px rgb(15 23 42 / 6%);
+  --popover-border: #e5e7eb;
+  --popover-shadow: 0 10px 24px rgb(15 23 42 / 10%), 0 2px 6px rgb(15 23 42 / 6%);
+  --row-hover: #f1f5f9;
   --tone: 72%;
   color-scheme: light;
 }
@@ -45,7 +53,10 @@
     --warn: #d97706;
     --bad: #dc2626;
     --shadow: 0 1px 2px rgb(15 23 42 / 6%), 0 4px 16px rgb(15 23 42 / 6%);
-  --tone: 72%;
+    --popover-border: #e5e7eb;
+    --popover-shadow: 0 10px 24px rgb(15 23 42 / 10%), 0 2px 6px rgb(15 23 42 / 6%);
+    --row-hover: #f1f5f9;
+    --tone: 72%;
     color-scheme: light;
   }
 }
@@ -461,75 +472,158 @@ details > summary {
 details > summary::-webkit-details-marker {
   display: none;
 }
-.advanced > summary {
+/* ---------- dropdowns (Share menu, Advanced settings): shadcn/ui DropdownMenu look ---------- */
+.icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.dropdown {
+  position: relative;
+}
+.dropdown-trigger {
   display: inline-flex;
   align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.dropdown-trigger .chevron {
+  width: 14px;
+  height: 14px;
+  opacity: 0.7;
+  transition: transform 150ms var(--ease);
+}
+.dropdown[open] > .dropdown-trigger .chevron {
+  transform: rotate(180deg);
+}
+.advanced > summary {
   min-height: 40px;
   padding: 0 12px;
   border-radius: 999px;
   color: var(--text-muted);
   font-weight: 600;
+  transition:
+    background-color 150ms var(--ease),
+    color 150ms var(--ease);
 }
+.advanced > summary:hover,
 .advanced[open] > summary {
   color: var(--text);
+  background: var(--row-hover);
 }
-.adv-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 24px;
-  align-items: flex-end;
-  padding: 8px 12px;
-}
-.field {
+.dropdown-panel {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 180px;
+  max-width: calc(100vw - 32px);
+  padding: 4px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-size: 0.8125rem;
-  color: var(--text-muted);
+  gap: 1px;
+  background: var(--popover);
+  color: var(--text);
+  border: 1px solid var(--popover-border);
+  border-radius: 8px;
+  box-shadow: var(--popover-shadow);
+  transform-origin: top left;
+  animation: dropdown-in 120ms var(--ease);
 }
-.field.check {
-  flex-direction: row;
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-2px);
+  }
+}
+.dropdown-row {
+  appearance: none;
+  display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 40px;
+  width: 100%;
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
   color: var(--text);
-  font-size: 0.9375rem;
-}
-.field.check input {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--accent-down);
-}
-select {
   font: inherit;
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
+  line-height: 1.25;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 100ms var(--ease);
+}
+.dropdown-row:hover,
+.dropdown-row:focus-visible,
+.dropdown-row:has(:focus-visible) {
+  background: var(--row-hover);
+}
+.dropdown-row:focus-visible {
+  outline: none;
+}
+.dropdown-row .icon {
+  color: var(--text-muted);
+}
+/* Advanced: settings rows (label left, control right). */
+.adv-panel {
+  min-width: 260px;
+}
+.adv-panel .dropdown-row {
+  justify-content: space-between;
+  gap: 16px;
+}
+.adv-panel .dropdown-row:has(:disabled) {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.adv-panel select {
+  font: inherit;
+  font-size: 0.875rem;
   color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  min-height: 40px;
-  padding: 4px 10px;
+  background: var(--bg);
+  border: 1px solid var(--popover-border);
+  border-radius: 6px;
+  min-height: 26px;
+  padding: 0 6px;
+  cursor: inherit;
 }
-.hint {
-  margin: 0 12px;
-  font-size: 0.8125rem;
-  max-width: 48ch;
+.adv-panel select:focus-visible,
+.adv-panel input:focus-visible {
+  outline: 2px solid var(--accent-down);
+  outline-offset: 1px;
 }
-.copy {
-  position: relative;
+.adv-panel input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  margin: 0 2px;
+  accent-color: var(--accent-down);
+  cursor: inherit;
 }
-.copy .menu {
-  position: absolute;
-  z-index: 2;
-  top: calc(100% + 4px);
-  left: 0;
-  display: flex;
-  gap: 8px;
-  padding: 8px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: var(--shadow);
+.adv-panel .hint {
+  margin: 4px 8px 4px;
+  max-width: 30ch;
+  font-size: 0.75rem;
+  white-space: normal;
+}
+.adv-panel .hint::before {
+  content: '';
+  display: block;
+  height: 1px;
+  margin: 0 -8px 6px;
+  background: var(--popover-border);
+}
+/* Share: the trigger is a pill button. */
+.copy .dropdown-trigger {
+  padding: 8px 16px;
 }
 
 @media (max-width: 599px) {
@@ -557,6 +651,9 @@ select {
   }
   .btn:active {
     transform: none;
+  }
+  .dropdown-panel {
+    animation: none;
   }
 }
 

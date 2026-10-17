@@ -4,6 +4,7 @@ import { debugOverrides, Orchestrator, type EngineEvent } from './engine/orchest
 import type { ConfigResponse, IdleLatency, IpResponse, Result } from './engine/protocol';
 import { resultText } from './engine/results';
 import { Controls } from './ui/controls';
+import { initDropdown } from './ui/dropdown';
 import { formatMsValue, rateWords } from './ui/format';
 import { Gauge } from './ui/gauge';
 import { renderIp } from './ui/ipinfo';
@@ -217,6 +218,12 @@ async function init(): Promise<void> {
 
   // Share menu: results image, or copy as Text / JSON
   const copyMenu = document.querySelector<HTMLDetailsElement>('details.copy')!;
+  for (const d of document.querySelectorAll<HTMLDetailsElement>('details.dropdown')) initDropdown(d);
+  const closeCopyMenu = (): void => {
+    const hadFocus = copyMenu.contains(document.activeElement);
+    copyMenu.open = false;
+    if (hadFocus) copyMenu.querySelector<HTMLElement>('summary')?.focus();
+  };
   copyMenu.addEventListener('click', (ev) => {
     const btn = (ev.target as HTMLElement).closest<HTMLButtonElement>('button[data-copy]');
     if (!btn || !lastResult) return;
@@ -227,7 +234,7 @@ async function init(): Promise<void> {
           announce(how === 'copied' ? 'Results image copied' : how === 'shared' ? 'Results image shared' : 'Results image downloaded'),
         () => announce('Could not create the results image'),
       );
-      copyMenu.open = false;
+      closeCopyMenu();
       return;
     }
     const text = kind === 'json' ? JSON.stringify(lastResult, null, 2) : resultText(lastResult);
@@ -235,13 +242,7 @@ async function init(): Promise<void> {
       () => announce(`Results copied as ${kind === 'json' ? 'JSON' : 'text'}`),
       () => announce('Copy failed'),
     );
-    copyMenu.open = false;
-  });
-  document.addEventListener('keydown', (ev) => {
-    if (ev.key === 'Escape' && copyMenu.open) {
-      copyMenu.open = false;
-      copyMenu.querySelector('summary')?.focus();
-    }
+    closeCopyMenu();
   });
 }
 
