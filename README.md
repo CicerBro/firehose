@@ -6,10 +6,17 @@ contains a **CLI client** for scripted runs and for measuring past browser limit
 It is designed to run behind **Traefik v3** (TLS) and **Authelia** (login) on a
 host you control.
 
-<!-- TODO: screenshots -->
-| Dark | Light | Mobile |
-|---|---|---|
-| ![Dark theme](docs/img/dark.png) | ![Light theme](docs/img/light.png) | ![Mobile](docs/img/mobile.png) |
+## Screenshots
+
+Sample results with **9.41 Gbps download** and **9.12 Gbps upload**.
+The screenshots use fictional server details (`speed.example.com`) and a reserved
+example IP address.
+
+![Speedtest UI with sample multi-gigabit download and upload results](docs/img/ui.png)
+
+The PNG exported from **Share → Image**:
+
+![Share image with sample 9.41 Gbps download and 9.12 Gbps upload results](docs/img/share.png)
 
 ## Features
 
