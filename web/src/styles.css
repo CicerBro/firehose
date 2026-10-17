@@ -559,3 +559,9 @@ select {
     transform: none;
   }
 }
+
+/* Header theme switch: System / Light / Dark. */
+.theme-switch span {
+  padding: 4px 10px;
+  font-size: 0.875rem;
+}

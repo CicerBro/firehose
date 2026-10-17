@@ -49,7 +49,7 @@ async function copyText(text: string): Promise<void> {
 }
 
 async function init(): Promise<void> {
-  const theme = new ThemeController($<HTMLButtonElement>('theme-toggle'));
+  const theme = new ThemeController($<HTMLElement>('theme-toggle'));
   const gauge = new Gauge({ canvas: $<HTMLCanvasElement>('gauge'), value: $('gauge-value'), unit: $('gauge-unit'), label: $('gauge-label') });
   const liveSpark = new Sparkline($<HTMLCanvasElement>('live-spark'));
   const tiles = new Tiles();

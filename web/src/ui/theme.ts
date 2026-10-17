@@ -32,29 +32,43 @@ export function withAlpha(c: string, alpha: number): string {
   return x ? `rgba(${x[0]},${x[1]},${x[2]},${alpha})` : c;
 }
 
+/** User preference: follow the OS setting, or force light/dark. */
+export type ThemePref = 'system' | Theme;
+
 export class ThemeController {
   private listeners: (() => void)[] = [];
   private mq = matchMedia('(prefers-color-scheme: light)');
+  private pref: ThemePref = 'system';
+  private readonly inputs: HTMLInputElement[];
 
-  constructor(private readonly button: HTMLButtonElement) {
+  constructor(group: HTMLElement) {
+    this.inputs = [...group.querySelectorAll<HTMLInputElement>('input[name="theme"]')];
     const stored = load('theme');
-    if (stored === 'dark' || stored === 'light') document.documentElement.dataset.theme = stored;
+    this.apply(stored === 'dark' || stored === 'light' ? stored : 'system');
+    // In System mode, follow live OS switches.
     this.mq.addEventListener('change', () => {
-      if (!document.documentElement.dataset.theme) this.changed();
+      if (this.pref === 'system') this.changed();
     });
-    button.addEventListener('click', () => this.set(this.current === 'dark' ? 'light' : 'dark'));
-    this.updateButton();
+    for (const input of this.inputs) {
+      input.addEventListener('change', () => {
+        if (input.checked) this.set(input.value as ThemePref);
+      });
+    }
   }
 
+  /** The theme actually shown. */
   get current(): Theme {
-    const t = document.documentElement.dataset.theme;
-    if (t === 'dark' || t === 'light') return t;
+    if (this.pref !== 'system') return this.pref;
     return this.mq.matches ? 'light' : 'dark';
   }
 
-  set(t: Theme): void {
-    document.documentElement.dataset.theme = t;
-    save('theme', t);
+  get preference(): ThemePref {
+    return this.pref;
+  }
+
+  set(p: ThemePref): void {
+    this.apply(p);
+    save('theme', p);
     this.changed();
   }
 
@@ -62,14 +76,14 @@ export class ThemeController {
     this.listeners.push(f);
   }
 
-  private changed(): void {
-    this.updateButton();
-    for (const f of this.listeners) f();
+  private apply(p: ThemePref): void {
+    this.pref = p;
+    if (p === 'system') delete document.documentElement.dataset.theme;
+    else document.documentElement.dataset.theme = p;
+    for (const input of this.inputs) input.checked = input.value === p;
   }
 
-  private updateButton(): void {
-    const next = this.current === 'dark' ? 'light' : 'dark';
-    this.button.setAttribute('aria-label', `Switch to ${next} theme`);
-    this.button.title = `Switch to ${next} theme`;
+  private changed(): void {
+    for (const f of this.listeners) f();
   }
 }

@@ -11,9 +11,11 @@
     <header class="top">
       <div class="brand"><span class="logo" aria-hidden="true">◉</span> Speedtest</div>
       <div class="server" id="server-info"></div>
-      <button type="button" id="theme-toggle" class="icon-btn" aria-label="Switch theme">
-        <span aria-hidden="true">◐</span>
-      </button>
+      <div id="theme-toggle" class="segmented theme-switch" role="radiogroup" aria-label="Theme">
+        <label title="Follow system setting"><input type="radio" name="theme" value="system" aria-label="System theme" /><span aria-hidden="true">◐</span></label>
+        <label title="Light theme"><input type="radio" name="theme" value="light" aria-label="Light theme" /><span aria-hidden="true">☀</span></label>
+        <label title="Dark theme"><input type="radio" name="theme" value="dark" aria-label="Dark theme" /><span aria-hidden="true">☾</span></label>
+      </div>
     </header>
 
     <main class="app">
