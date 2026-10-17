@@ -1,0 +1,24 @@
+# Keep the build context small and deterministic.
+.git
+.github
+.claude
+.DS_Store
+**/node_modules
+# web/dist is rebuilt inside the image; keep only the placeholder so the embed stays valid.
+web/dist/*
+!web/dist/.gitkeep
+web/test-results
+web/playwright-report
+# Local build outputs
+speedtest
+speedtest.exe
+bin
+dist
+*.test
+*.out
+# Not needed for the build
+deploy
+docs
+*.md
+Dockerfile
+.dockerignore

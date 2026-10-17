@@ -9,3 +9,6 @@ web/playwright-report/
 *.test
 *.out
 .DS_Store
+deploy/speedtest.env
+deploy/.env
+deploy/acme/

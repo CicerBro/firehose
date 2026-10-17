@@ -1,0 +1,177 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Keep in sync with the oven/bun image in the Dockerfile.
+  BUN_VERSION: "1.4.3"
+
+jobs:
+  go:
+    name: Go (vet, staticcheck, test -race)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+          cache: true
+      # The UI is not built here: web/dist/.gitkeep keeps the //go:embed valid.
+      - name: go vet
+        run: go vet ./...
+      - name: staticcheck
+        run: |
+          go install honnef.co/go/tools/cmd/staticcheck@latest
+          staticcheck ./...
+      - name: gofmt
+        run: |
+          unformatted=$(gofmt -l $(git ls-files '*.go'))
+          if [ -n "$unformatted" ]; then echo "gofmt needed:"; echo "$unformatted"; exit 1; fi
+      - name: go test -race
+        run: go test -race ./...
+
+  web:
+    name: Web (typecheck, bun test, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - name: bun install
+        run: bun install --frozen-lockfile
+      - name: typecheck
+        run: bun --bun run typecheck
+      - name: bun test
+        run: bun test tests/unit
+      - name: build
+        run: bun --bun run build
+      - name: Size report (gzipped)
+        run: |
+          echo "### Bundle sizes (gzip -9)" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          find dist -type f \( -name '*.js' -o -name '*.css' -o -name '*.html' \) -print0 \
+            | sort -z | while IFS= read -r -d '' f; do
+                printf '%8d  %s\n' "$(gzip -9c "$f" | wc -c)" "$f"
+              done >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: web-dist
+          path: web/dist
+          include-hidden-files: true
+          retention-days: 3
+
+  build:
+    name: Binary (embedded UI) + smoke test
+    needs: web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+          cache: true
+      - uses: actions/download-artifact@v8
+        with:
+          name: web-dist
+          path: web/dist
+      - name: go build
+        run: CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=ci-${GITHUB_SHA::7}" -o speedtest ./cmd/speedtest
+      - name: Smoke test (serve placeholder UI + /healthz)
+        run: |
+          ./speedtest version
+          ./speedtest serve --dev --listen 127.0.0.1:8080 & pid=$!
+          for i in $(seq 1 50); do curl -fsS http://127.0.0.1:8080/healthz && break; sleep 0.2; done
+          curl -fsS http://127.0.0.1:8080/healthz | grep -qx ok
+          curl -fsS http://127.0.0.1:8080/ | grep -qi '<html'
+          kill "$pid"
+
+  docker:
+    name: Docker build (amd64 + arm64, no push)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      # Multi-arch build without QEMU: the build stages run on $BUILDPLATFORM and
+      # cross-compile; the final stage is FROM scratch (COPY only).
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: false
+          build-args: VERSION=ci-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Load amd64 image and run it
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          tags: speedtest:ci
+          build-args: VERSION=ci-${{ github.sha }}
+          cache-from: type=gha
+      - run: |
+          docker run --rm speedtest:ci version
+          docker image ls speedtest:ci --format 'image size: {{.Size}}' | tee -a "$GITHUB_STEP_SUMMARY"
+
+  e2e:
+    name: E2E (Playwright, ${{ matrix.browser }})
+    needs: web
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check for Playwright config
+        id: cfg
+        run: |
+          if [ -f web/playwright.config.ts ]; then echo "present=true" >> "$GITHUB_OUTPUT"
+          else echo "present=false" >> "$GITHUB_OUTPUT"; echo "::notice::web/playwright.config.ts not found; skipping e2e"; fi
+      - uses: actions/setup-go@v7
+        if: steps.cfg.outputs.present == 'true'
+        with:
+          go-version: stable
+          cache: true
+      - uses: oven-sh/setup-bun@v2
+        if: steps.cfg.outputs.present == 'true'
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - name: Install deps and browser
+        if: steps.cfg.outputs.present == 'true'
+        working-directory: web
+        run: |
+          bun install --frozen-lockfile
+          bunx playwright install --with-deps ${{ matrix.browser }}
+      - name: Build binary (UI embedded)
+        if: steps.cfg.outputs.present == 'true'
+        run: make build
+      - name: Playwright
+        if: steps.cfg.outputs.present == 'true'
+        working-directory: web
+        run: bun --bun x playwright test --project=${{ matrix.browser }}
+      - uses: actions/upload-artifact@v7
+        if: failure() && steps.cfg.outputs.present == 'true'
+        with:
+          name: playwright-report-${{ matrix.browser }}
+          path: |
+            web/playwright-report
+            web/test-results
+          retention-days: 7

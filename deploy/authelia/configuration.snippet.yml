@@ -1,0 +1,36 @@
+# Authelia (>= 4.38) — the parts of configuration.yml the speedtest needs (build plan §12.2).
+# MERGE this into your existing configuration.yml; it is not a complete config.
+#
+# Replace before use:
+#   example.com         -> the parent domain of your speedtest hostnames
+#   auth.example.com    -> your Authelia portal
+#   speed.example.com   -> your speedtest domain
+#   YOUR_USER           -> your Authelia username
+
+server:
+  endpoints:
+    authz:
+      # Traefik's forwardAuth middleware calls /api/authz/forward-auth.
+      # This is the default in 4.38+; listed here so it is not accidentally removed.
+      forward-auth:
+        implementation: ForwardAuth
+
+session:
+  cookies:
+    # The cookie domain MUST be a parent of speed.example.com AND s1..s8.speed.example.com,
+    # otherwise the browser does not send the login cookie to the test hosts and every
+    # stream is redirected to the login page (build plan §15, gotcha 24).
+    - domain: example.com
+      authelia_url: https://auth.example.com
+      # Defaults (inactivity 5m, expiration 1h) are fine: a test run takes ~35 s.
+      # If the page idles past them, the UI shows "Signed out. Reload to sign in again".
+
+access_control:
+  default_policy: deny
+  rules:
+    - domain:
+        - "speed.example.com"
+        - "*.speed.example.com"
+      policy: two_factor
+      subject:
+        - "user:YOUR_USER"

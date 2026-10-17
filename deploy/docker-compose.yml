@@ -1,0 +1,40 @@
+# Production stack (build plan §12.3). Run from the deploy/ directory:
+#
+#   cp speedtest.env.example speedtest.env    # edit: domain, token, server name
+#   echo "CF_DNS_API_TOKEN=..." > .env         # DNS API token for the wildcard cert
+#   docker compose up -d
+#
+# Both containers use HOST networking: lowest overhead at 10 Gbps and no UDP NAT
+# in front of WebRTC (UDP 50000). Authelia is not part of this file; it is assumed
+# to run already. Point the forwardAuth address in traefik/dynamic/speedtest.yml at it.
+#
+# Firewall: allow TCP 80, TCP 443 and UDP 50000 inbound. Nothing else.
+
+name: speedtest
+
+services:
+  traefik:
+    image: traefik:v3.7
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/dynamic:/etc/traefik/dynamic:ro
+      - ./acme:/acme
+    environment:
+      # Cloudflare DNS-01 challenge. Use your provider's variables if different
+      # (see https://doc.traefik.io/traefik/https/acme/#providers).
+      CF_DNS_API_TOKEN: ${CF_DNS_API_TOKEN:?set CF_DNS_API_TOKEN in deploy/.env}
+
+  speedtest:
+    image: ghcr.io/cicerbro/speedtest:latest   # pin a release tag (e.g. :1.0.0) in production
+    network_mode: host
+    restart: unless-stopped
+    ulimits:
+      nofile: { soft: 65536, hard: 65536 }
+    # All SPEEDTEST_* settings live in speedtest.env (copy speedtest.env.example).
+    env_file: speedtest.env
+    environment:
+      # Must match the service URL in traefik/dynamic/speedtest.yml. Loopback only:
+      # never expose the plain-HTTP port to the network.
+      SPEEDTEST_LISTEN: 127.0.0.1:8080
