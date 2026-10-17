@@ -9,7 +9,7 @@ defaults: 12 s per direction, 2 s grace.
 
 | # | Test | Setup | Target | Status |
 |---|---|---|---|---|
-| 1 | Loopback, no TLS | `speedtest client --server http://127.0.0.1:8080 -n 8` on 4+ cores | ≥ 20 Gbps (the server is not the bottleneck) | TODO |
+| 1 | Loopback, no TLS | `speedtest client --server http://127.0.0.1:8080 -n 8` on 4+ cores | ≥ 20 Gbps (the server is not the bottleneck) | Met on a dev laptop: 29.4 ↓ / 22.1 ↑ Gbps (§1) |
 | 2 | 10G LAN, no TLS | two hosts with 10G NICs, compared with `iperf3 -P 8` | CLI ≥ 90 % of iperf3 | TODO |
 | 3 | 10G LAN, via Traefik + TLS | full production stack | CLI ≥ 85 % of iperf3; record Traefik CPU | TODO |
 | 4 | Single stream | `-n 1` | Record the result | TODO |
@@ -73,8 +73,10 @@ Use `--json` to capture exact values. Also check that `-n 8` really opens 8 conn
 
 | Machine (CPU, cores) | OS | Streams | Download | Upload | Idle latency | Loaded latency ↓ / ↑ | Server CPU | Meets ≥ 20 Gbps? |
 |---|---|---|---|---|---|---|---|---|
-| TODO | TODO | 8 | TODO | TODO | TODO | TODO | TODO | TODO |
-| TODO | TODO | 1 | TODO | TODO | TODO | TODO | TODO | n/a |
+| Apple M1 Pro, 10 cores (dev laptop, 2026-10-17) | macOS 27.0.1 | 8 | 29.4 Gbps | 22.1 Gbps | 0.5 ms | 8.9 / 12.8 ms | not recorded | Yes |
+| Apple M1 Pro, 10 cores (dev laptop, 2026-10-17) | macOS 27.0.1 | 1 | 41.9 Gbps | 20.5 Gbps | – | – | not recorded | n/a |
+
+On loopback, client and server share the same CPU, so `-n 1` beating `-n 8` reflects CPU contention, not a server limit. Repeat on the production host for the record.
 
 ## 2. 10G LAN, no TLS (CLI vs iperf3)
 
