@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"github.com/CicerBro/speedtest/internal/config"
+	"github.com/CicerBro/speedtest/internal/rtc"
 	"github.com/CicerBro/speedtest/internal/server"
 )
 
@@ -27,7 +28,8 @@ func runServe(args []string) int {
 	}
 	log := cfg.Logger(os.Stderr)
 
-	srv, err := server.New(cfg, server.WithLogger(log), server.WithVersion(version))
+	srv, err := server.New(cfg, server.WithLogger(log), server.WithVersion(version),
+		server.WithRTC(rtc.NewFactory(rtc.Options{})))
 	if err != nil {
 		log.Error("startup failed", "err", err)
 		return 1
