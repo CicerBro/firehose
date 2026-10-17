@@ -11,6 +11,8 @@ export const VMAX_HIGH = 100_000; // Mbps (100 Gbps)
 export const EASE_TAU_MS = 150;
 const SCALE_TWEEN_MS = 600;
 const COLOR_FADE_MS = 300;
+/** Minimum time between frames: caps the gauge at ~60 fps on 120 Hz displays (the glow is costly to draw). */
+export const MIN_FRAME_MS = 1000 / 60;
 
 /** Gauge position 0…1 for a value in Mbps: log10(1 + v) / log10(1 + vMax). Clamped. */
 export function pos(vMbps: number, vMax: number = VMAX_DEFAULT): number {
@@ -231,6 +233,11 @@ export class Gauge {
   }
 
   private frame = (now: number): void => {
+    // rAF timestamps jitter by a ms or two: the slack keeps a 60 Hz display at 60 fps.
+    if (now - this.lastFrame < MIN_FRAME_MS - 2) {
+      this.raf = requestAnimationFrame(this.frame);
+      return;
+    }
     this.raf = 0;
     const dt = Math.min(100, now - this.lastFrame);
     this.lastFrame = now;
