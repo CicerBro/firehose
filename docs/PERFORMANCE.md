@@ -157,6 +157,34 @@ Soft target: Chrome Multi 8 ≥ 7 Gbps.
 (e.g. a main-thread or worker CPU bound, upload Blob handling, per-host connection
 limits).
 
+## Browser on localhost: why multi < single and upload < download
+
+Measured 2026-10-17 on the dev laptop (Apple M1 Pro, macOS 27), server and browser on the same machine,
+plain HTTP (so HTTP/1.1), single-origin mode (at most 6 connections). Numbers vary ±20 % with background load.
+
+| Test | 1 stream | 2 streams | 6 streams |
+|---|---|---|---|
+| `iperf3` on 127.0.0.1 | 63 Gbps | 38 Gbps | 26 Gbps |
+| `speedtest client` download | 64 Gbps | – | 35 Gbps |
+| Chromium download (bare fetch loop, no UI) | 37 Gbps | 32 Gbps | 29 Gbps |
+| `speedtest client` upload | 27 Gbps | – | 22 Gbps |
+| Chromium upload, Blob body (bare fetch loop) | 11–12 Gbps | 10.5 Gbps | 9.7 Gbps |
+| WebKit download / upload | 17 / 6 Gbps | – | 19 / 6.5 Gbps |
+
+**Multi below single is macOS loopback, not our code.** iperf3 shows the same drop with no
+browser and no Go server involved: more parallel loopback flows contend in the kernel, and the
+client and server share the same cores. Spreading the streams over 1, 3 or 6 workers made no difference.
+On a real NIC this effect disappears and multiple streams win, as intended.
+
+**The upload ceiling is the browser's upload path.** The Go CLI uploads 27 Gbps to the same server, so the
+server is not the limit. In Chromium every upload body is read from blob storage by the browser and
+network-service processes and copied through a data pipe. That path stays at about 10–12 Gbps however many streams or
+whatever body size (1–256 MiB) is used. WebKit is lower still. A Blob is already the fastest body. An
+`ArrayBuffer` body measured under 1 Gbps. A streaming (`ReadableStream`) body needs HTTP/2 or newer and
+doesn't work on plain-HTTP localhost, which is always HTTP/1.1. It would add a JS copy per chunk too.
+
+**What was ours:** the gauge redrew at the display refresh rate (120 Hz on ProMotion). It is capped at 60 fps now.
+
 ## Network-condition sanity checks (§13.4)
 
 On the server: `tc qdisc add dev eth0 root netem delay 30ms 5ms loss 2%`.
