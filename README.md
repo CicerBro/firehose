@@ -17,8 +17,8 @@ host you control.
 - **Idle latency, loaded latency and jitter** over a WebSocket. Loaded latency is measured during download and upload, so you can see bufferbloat
 - **Packet loss and UDP jitter** over a WebRTC data channel (unordered, no retransmits). It shows "Unavailable" when UDP is blocked
 - Your **public IP** as the server sees it, with an IPv4/IPv6 badge
-- An animated semicircular **live gauge** with sparklines, light and dark themes, and a layout that works down to 360 px wide
-- **Copy results** as text or JSON. The CLI produces the same JSON schema
+- An animated semicircular **live gauge** with sparklines, light, dark and system themes, and a layout that works down to 360 px wide
+- **Share** results as an image (a PNG of the result tiles), or copy them as text or JSON. The CLI produces the same JSON schema
 - **CLI client** (`speedtest client`) with human, JSON and CSV output, a repeat interval for monitoring, and clear exit codes
 - Honest numbers: random incompressible payload, no caching, no compression, HTTP/1.1 only on the test hosts (so "8 connections" really means 8 TCP connections), and connections spread over `s1…s8` hostnames to get past the browser limit of 6 connections per host
 - Small: one static binary, a `FROM scratch` image, and no runtime dependencies in the frontend
