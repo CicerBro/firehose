@@ -3,10 +3,116 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
     <title>Speedtest</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   </head>
   <body>
-    <main id="app"><h1>Speedtest</h1><p>Placeholder.</p></main>
+    <header class="top">
+      <div class="brand"><span class="logo" aria-hidden="true">◉</span> Speedtest</div>
+      <div class="server" id="server-info"></div>
+      <button type="button" id="theme-toggle" class="icon-btn" aria-label="Switch theme">
+        <span aria-hidden="true">◐</span>
+      </button>
+    </header>
+
+    <main class="app">
+      <div id="signed-out" class="banner bad" role="alert" hidden>
+        <span>Signed out. Reload to sign in again.</span>
+        <button type="button" id="reload-btn" class="btn small">Reload</button>
+      </div>
+      <div id="error" class="banner warn" role="alert" hidden></div>
+
+      <section class="ip-strip" aria-label="Your IP address">
+        <span class="muted">Your IP</span>
+        <span id="ip-addr" class="ip-addr">…</span>
+        <span id="ip-family" class="badge" hidden></span>
+      </section>
+
+      <section class="gauge-wrap" aria-label="Live measurement">
+        <canvas id="gauge" class="gauge" role="img" aria-label="Speed gauge, no result yet"></canvas>
+        <div class="readout">
+          <div class="readout-value"><span id="gauge-value" class="num">—</span> <span id="gauge-unit" class="unit">Mbps</span></div>
+          <div id="gauge-label" class="phase-label">Ready</div>
+        </div>
+      </section>
+
+      <div class="start-row">
+        <button type="button" id="start-btn" class="btn primary"><span aria-hidden="true" id="start-icon">▶</span> <span id="start-text">Start</span></button>
+      </div>
+
+      <canvas id="live-spark" class="spark live" aria-hidden="true"></canvas>
+
+      <div id="tab-warning" class="note warn-text" hidden>⚠ Tab was in background; results may be inaccurate.</div>
+      <div id="session-note" class="note muted" hidden></div>
+
+      <section class="tiles" aria-label="Results">
+        <article class="tile big" id="tile-down">
+          <h2><span aria-hidden="true">↓</span> Download</h2>
+          <div class="tile-value pending"><span class="num v">—</span> <span class="unit u"></span></div>
+          <div class="tile-sub"><span class="sub"></span> <span class="bloat" hidden></span></div>
+          <canvas class="spark" aria-hidden="true"></canvas>
+        </article>
+        <article class="tile big" id="tile-up">
+          <h2><span aria-hidden="true">↑</span> Upload</h2>
+          <div class="tile-value pending"><span class="num v">—</span> <span class="unit u"></span></div>
+          <div class="tile-sub"><span class="sub"></span> <span class="bloat" hidden></span></div>
+          <canvas class="spark" aria-hidden="true"></canvas>
+        </article>
+        <article class="tile small" id="tile-ping">
+          <h2>Ping</h2>
+          <div class="tile-value pending"><span class="num v">—</span> <span class="unit u"></span></div>
+        </article>
+        <article class="tile small" id="tile-jitter">
+          <h2>Jitter</h2>
+          <div class="tile-value pending"><span class="num v">—</span> <span class="unit u"></span></div>
+        </article>
+        <article class="tile small" id="tile-loss">
+          <h2>Loss</h2>
+          <div class="tile-value pending"><span class="num v">—</span> <span class="unit u"></span></div>
+        </article>
+      </section>
+
+      <section class="controls" aria-label="Test settings">
+        <div class="control-row">
+          <span id="conn-label" class="muted">Connections</span>
+          <div class="segmented" role="radiogroup" aria-labelledby="conn-label">
+            <label><input type="radio" name="mode" value="single" /><span>Single</span></label>
+            <label><input type="radio" name="mode" value="multi" checked /><span>Multi</span></label>
+          </div>
+        </div>
+        <details class="advanced">
+          <summary>⚙ Advanced</summary>
+          <div class="adv-grid">
+            <label class="field"
+              ><span>Streams (Multi)</span>
+              <select id="streams"></select>
+            </label>
+            <label class="field"
+              ><span>Duration per direction</span>
+              <select id="duration">
+                <option value="6">6 s</option>
+                <option value="12" selected>12 s</option>
+                <option value="20">20 s</option>
+              </select>
+            </label>
+            <label class="field check" id="loss-field"><input type="checkbox" id="loss" checked /> <span>Packet loss test</span></label>
+          </div>
+          <p id="streams-hint" class="hint muted" hidden></p>
+        </details>
+        <div class="copy-row" id="copy-row" hidden>
+          <details class="copy">
+            <summary class="btn">Copy results ▾</summary>
+            <div class="menu">
+              <button type="button" class="btn small" data-copy="text">Text</button>
+              <button type="button" class="btn small" data-copy="json">JSON</button>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <div id="live" class="sr-only" aria-live="polite"></div>
+    </main>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
