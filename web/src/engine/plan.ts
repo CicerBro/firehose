@@ -30,6 +30,15 @@ export function planStreams(streams: number, hosts: string[], workers: number): 
   return plan;
 }
 
+/**
+ * Origins the transfer streams use. In single-origin mode the only test host is the server's own PUBLIC_URL,
+ * which is the page's origin unless the page was opened under another name (127.0.0.1 vs localhost, a LAN IP).
+ * Then that URL would be cross-origin without CORS approval and every stream would fail, so use the page's origin.
+ */
+export function transferHosts(testHosts: string[], singleOrigin: boolean, pageOrigin: string): string[] {
+  return singleOrigin ? [pageOrigin] : testHosts;
+}
+
 /** Upload size ladder 16…256 MiB bounded by [start, max] (§7.4). */
 export function uploadSizes(start: number, max: number): number[] {
   const sizes = UP_LADDER.filter((s) => s >= start && s <= max);

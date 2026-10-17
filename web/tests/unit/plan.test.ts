@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { MiB, planStreams, uploadSizes, workerCount } from '../../src/engine/plan';
+import { MiB, planStreams, transferHosts, uploadSizes, workerCount } from '../../src/engine/plan';
 import { defaultStreams, streamOptions } from '../../src/ui/controls';
 
 describe('workerCount: clamp(ceil(N/2), 1, 4), capped at hardwareConcurrency/2', () => {
@@ -65,5 +65,15 @@ describe('stream options', () => {
   test('default 8 or the largest below', () => {
     expect(defaultStreams([2, 4, 8, 16, 32])).toBe(8);
     expect(defaultStreams([2, 4, 6])).toBe(6);
+  });
+});
+
+describe('transferHosts', () => {
+  test('single-origin mode uses the page origin, even when PUBLIC_URL names the server differently', () => {
+    expect(transferHosts(['http://localhost:8080'], true, 'http://127.0.0.1:8080')).toEqual(['http://127.0.0.1:8080']);
+  });
+  test('test hosts are used as configured', () => {
+    const hosts = ['https://s1.speed.example.com', 'https://s2.speed.example.com'];
+    expect(transferHosts(hosts, false, 'https://speed.example.com')).toEqual(hosts);
   });
 });

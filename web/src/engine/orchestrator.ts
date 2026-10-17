@@ -4,7 +4,7 @@
 //   any running state —[Stop]→ aborting → idle (partial results discarded)
 import { createSession, SignedOutError, wsUrl } from './api';
 import { LOSS_DEFAULTS, runLossTest, unavailableLoss } from './loss';
-import { DOWN_BYTES, planStreams, UP_MAX_SIZE, UP_START_SIZE, workerCount } from './plan';
+import { DOWN_BYTES, planStreams, transferHosts, UP_MAX_SIZE, UP_START_SIZE, workerCount } from './plan';
 import type {
   ConfigResponse,
   Direction,
@@ -310,7 +310,7 @@ export class Orchestrator {
     const phase: TransferPhase = dir === 'down' ? 'download' : 'upload';
     const n = session.connections;
     const W = workerCount(n, navigator.hardwareConcurrency);
-    const plan = planStreams(n, session.testHosts, W);
+    const plan = planStreams(n, transferHosts(session.testHosts, this.config.singleOrigin, location.origin), W);
     const workers = this.spawnTransferWorkers(W);
     const limits = this.config.limits;
 
