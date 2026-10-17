@@ -1,0 +1,8 @@
+Server   ams-1 (https://speed.example.com) · v0.1.0
+Client   2001:db8::7 (IPv6)
+Mode     8 connections · 12 s per direction
+
+Latency     4.1 ms   (min 3.8, jitter 0.3, 17 samples)
+Download    9.41 Gbps   ▕████████████████████▏ loaded latency 18.2 ms
+Upload      9.12 Gbps   ▕███████████████████▌▏ loaded latency 9.0 ms
+Packet loss ↓ 0.00 %  ↑ 0.17 %   (UDP jitter ↓ 0.4 ms ↑ 0.5 ms)

@@ -1,0 +1,10 @@
+Server   ams-1 (https://speed.example.com) · v0.1.0
+Client   2001:db8::7 (IPv6)
+Mode     1 connection · 12 s per direction
+
+Latency     4.1 ms   (min 3.8, jitter 0.3, 17 samples)
+Download    9.41 Gbps   ▕████████████████████▏ loaded latency 18.2 ms
+Upload      123 Mbps    ▕▌                   ▏ (short, approx)
+Packet loss unavailable (UDP blocked or disabled)
+
+Aborted: partial results
