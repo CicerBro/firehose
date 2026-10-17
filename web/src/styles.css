@@ -601,12 +601,50 @@ details > summary::-webkit-details-marker {
   outline: 2px solid var(--accent-down);
   outline-offset: 1px;
 }
-.adv-panel input[type='checkbox'] {
+/* shadcn-style switch: a native checkbox (role="switch") drawn as a pill with a sliding thumb. */
+.adv-panel input.switch {
+  appearance: none;
+  flex: none;
+  position: relative;
+  width: 36px;
+  height: 20px;
+  margin: 0;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-muted) 40%, var(--surface));
+  cursor: inherit;
+  transition: background-color 150ms var(--ease);
+}
+.adv-panel input.switch::before {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 1px;
   width: 16px;
   height: 16px;
-  margin: 0 2px;
-  accent-color: var(--accent-down);
-  cursor: inherit;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+  transition: transform 150ms var(--ease);
+}
+.adv-panel input.switch:checked {
+  background: var(--accent-down);
+}
+.adv-panel input.switch:checked::before {
+  transform: translateX(16px);
+}
+.adv-panel input.switch:focus-visible {
+  outline: 2px solid var(--accent-down);
+  outline-offset: 2px;
+}
+.adv-panel input.switch:disabled {
+  opacity: 0.5;
+}
+@media (prefers-reduced-motion: reduce) {
+  .adv-panel input.switch,
+  .adv-panel input.switch::before {
+    transition: none;
+  }
 }
 .adv-panel .hint {
   margin: 4px 8px 4px;
